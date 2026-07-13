@@ -1,0 +1,51 @@
+{
+  "name": "@zantiflow/backend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "zantiflow multi-tenant backend — ingest, read/management API, auth, notifications.",
+  "license": "Apache-2.0",
+  "type": "commonjs",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "prisma generate && tsc -p tsconfig.json",
+    "clean": "rm -rf dist",
+    "dev": "prisma migrate deploy && tsx watch --env-file-if-exists=.env src/index.ts",
+    "start": "node dist/index.js",
+    "db:up": "docker compose -f docker-compose.dev.yml up -d",
+    "db:down": "docker compose -f docker-compose.dev.yml down",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate deploy",
+    "notify": "tsx --env-file=.env scripts/notify.ts",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@prisma/adapter-mariadb": "7.8.0",
+    "@prisma/client": "^7.8.0",
+    "@zantiflow/oauth": "workspace:*",
+    "@zantiflow/oauth-express": "workspace:*",
+    "@zantiflow/protocol": "workspace:*",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "helmet": "^8.2.0",
+    "prisma": "^7.8.0",
+    "web-push": "^3.6.7",
+    "ws": "^8.21.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@testcontainers/mariadb": "^12.0.4",
+    "@types/cookie-parser": "^1.4.10",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.1.1",
+    "@types/supertest": "^7.2.0",
+    "@types/web-push": "^3.6.4",
+    "@types/ws": "^8.18.1",
+    "jose": "^6.2.3",
+    "supertest": "^7.2.2",
+    "tsx": "^4.23.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.10"
+  }
+}

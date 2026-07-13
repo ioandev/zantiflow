@@ -1,0 +1,58 @@
+{
+  "name": "@zantiflow/oauth-express",
+  "version": "0.1.0",
+  "description": "Express router for Sign in with Google & Apple, built on @zantiflow/oauth. You provide the session + storage hooks.",
+  "license": "Apache-2.0",
+  "author": "ioandev",
+  "homepage": "https://github.com/ioandev/zantiflow/tree/main/packages/oauth-express#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ioandev/zantiflow.git",
+    "directory": "packages/oauth-express"
+  },
+  "bugs": {
+    "url": "https://github.com/ioandev/zantiflow/issues"
+  },
+  "type": "commonjs",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "oauth",
+    "express",
+    "google",
+    "apple",
+    "sign-in-with-apple",
+    "authentication"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist",
+    "test": "vitest run",
+    "prepublishOnly": "npm run clean && npm run build"
+  },
+  "dependencies": {
+    "@zantiflow/oauth": "workspace:^"
+  },
+  "peerDependencies": {
+    "express": "^4.17.0 || ^5.0.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.1.1",
+    "express": "^5.2.1",
+    "typescript": "^5.9.3"
+  }
+}

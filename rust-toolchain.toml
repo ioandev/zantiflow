@@ -1,0 +1,5 @@
+# Pin the toolchain + the WASM target the plugin builds against (ADR-0001: pin exact versions —
+# the zellij-tile API enums are #[non_exhaustive] and evolving).
+[toolchain]
+channel = "1.96.1"
+targets = ["wasm32-wasip1"]

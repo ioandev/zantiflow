@@ -1,0 +1,7 @@
+# The shared protocol package (editable, from the monorepo).
+-e ../../packages/notify-protocol
+discord.py>=2.7
+python-dotenv>=1.2
+
+# Dev only (not in the Docker image): `just dev` auto-reload on file changes.
+watchfiles>=0.24

@@ -1,0 +1,224 @@
+// zantiflow data model (ADR-0003/0004/0005/0008/0009/0011/0012 · plan Appendix A).
+// Provider = mysql (MariaDB). There are intentionally NO Prisma relations: every tenant row
+// carries a scalar `accountId` and each query is scoped by it at the data layer (the top bug
+// class is IDOR — plan invariant). History retention = none: Snapshot/Attention are latest-only,
+// keyed so a new write replaces the old. Captured pane CONTENT is never stored here at all (ADR-0032):
+// it is relayed through the backend's in-process memory; only the `OutputRequest` lifecycle is in the DB.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model Account {
+  id            String    @id @default(cuid())
+  oauthProvider String
+  oauthId       String
+  email         String?   @db.VarChar(320)
+  name          String
+  avatarUrl     String?   @db.VarChar(512)
+  tier          String    @default("free") // free | pro
+  tierExpiresAt DateTime?
+  sessionEpoch  Int       @default(0) // bump = log-out-everywhere
+  deletedAt     DateTime?
+  createdAt     DateTime  @default(now())
+
+  @@unique([oauthProvider, oauthId])
+}
+
+model Token {
+  // ingest tokens (write-only)
+  id           String    @id @default(cuid())
+  accountId    String
+  lookupPrefix String    @unique
+  secretHash   String // SHA-256 of full secret
+  label        String?
+  expiresAt    DateTime? // null = infinite
+  lastUsedAt   DateTime?
+  revokedAt    DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@index([accountId])
+}
+
+model Machine {
+  id          String   @id // plugin-generated machineId
+  accountId   String
+  displayName String? // may be <hidden>
+  tokenId     String? // ingest token that last pushed for this machine; null = unlinked / predates the link
+  firstSeenAt DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+
+  @@index([accountId])
+  @@index([tokenId])
+}
+
+model Snapshot {
+  // Per-SESSION, latest-only. Zellij delivers only the current session to a plugin, so each session's
+  // plugin instance reports just its own session; the machine view is the UNION of its sessions' rows
+  // (ADR-0008). Keyed by (machineId, sid). A session silent past STALE_AFTER_MS is excluded on read
+  // and pruned by the retention sweep. `data` is this session's wire-v4 slice (machine-level fields +
+  // sessions:[thisSession]); the read takes machine-level from the freshest slice.
+  machineId      String
+  sid            String
+  accountId      String
+  version        Int
+  capturedAtTick Int
+  data           Json
+  receivedAt     DateTime @default(now())
+
+  @@id([machineId, sid])
+  @@index([accountId])
+  @@index([machineId, receivedAt])
+}
+
+model PaneActivity {
+  // Derived per-pane activity (ADR-0001/0008/0016). The plugin can't signal "new stdout", so the
+  // backend derives it: on each ingest we diff every pane's contentFingerprint against the previous
+  // one and stamp a BACKEND-clock `lastUpdatedAt` when it changes. `activity` is a JSON map
+  // `{ [paneKey=sid:tabId:paneId]: { fp, updatedAt|null } }` — one row per (machine, SESSION) so each
+  // session's plugin instance only rewrites its own panes (no cross-instance clobber); the read unions
+  // the maps. Writes stay O(panes-in-one-session). `updatedAt=null` = a pane we've seen but never
+  // observed change → rendered "Unknown".
+  machineId String
+  sid       String
+  accountId String
+  activity  Json
+  updatedAt DateTime @updatedAt
+
+  @@id([machineId, sid])
+  @@index([accountId])
+}
+
+model Attention {
+  // current only (no history)
+  id          String    @id @default(cuid())
+  accountId   String
+  machineId   String
+  type        String
+  targetKey   String // sid:tabId:paneId
+  state       String // active | cleared
+  activeSince DateTime
+  lastFiredAt DateTime?
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([machineId, targetKey, type])
+  @@index([accountId])
+}
+
+// Captured pane content is NEVER persisted (ADR-0032, superseding ADR-0030). It is relayed through the
+// backend's in-process `PaneOutputStore` (src/output/store.ts) from the plugin's delivery to the
+// owner's one-shot read, then dropped. Only the request lifecycle below (which pane, pending/fulfilled
+// — no terminal content) is kept in the DB.
+
+model OutputRequest {
+  id          String   @id @default(cuid())
+  accountId   String
+  machineId   String
+  paneKey     String
+  status      String   @default("pending") // pending | fulfilled | expired
+  requestedAt DateTime @default(now())
+
+  @@index([machineId, status])
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  accountId String
+  endpoint  String   @db.VarChar(512)
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  @@index([accountId])
+}
+
+model NotificationSettings {
+  accountId String @id
+  config    Json
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  accountId String
+  source    Json // {type, target}
+  text      String   @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([accountId])
+}
+
+model NotificationDelivery {
+  id             String    @id @default(cuid())
+  notificationId String
+  accountId      String
+  channel        String // webpush | discord | telegram
+  recipientRef   String
+  status         String    @default("pending") // pending|delivered|failed|expired
+  attempts       Int       @default(0)
+  deliveryId     String    @unique // idempotency
+  dispatchedAt   DateTime?
+  ackedAt        DateTime?
+  lastError      String?
+  createdAt      DateTime  @default(now())
+
+  @@index([channel, status])
+  @@index([status, createdAt])
+}
+
+model ChannelLink {
+  id               String   @id @default(cuid())
+  accountId        String
+  platform         String // discord | telegram
+  platformUserId   String
+  platformUsername String?
+  status           String   @default("active") // active | stale | revoked
+  linkedAt         DateTime @default(now())
+
+  @@unique([platform, platformUserId])
+  @@index([accountId, platform])
+}
+
+model LinkToken {
+  tokenHash String    @id
+  accountId String
+  platform  String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+}
+
+model PairingSession {
+  id            String    @id // sessionId (unguessable)
+  userCodeHash  String    @unique
+  status        String    @default("pending") // pending|approved|consumed|expired|denied
+  accountId     String?
+  issuedTokenId String?
+  machineHint   String?
+  createdAt     DateTime  @default(now())
+  expiresAt     DateTime
+  lastPolledAt  DateTime?
+}
+
+model PromoCode {
+  code            String   @id // ZTF-XXXXXXXX (CSRNG)
+  grantsTier      String   @default("pro")
+  durationDays    Int      @default(30)
+  maxRedemptions  Int? // null = unlimited
+  perAccountLimit Int      @default(1)
+  expiresAt       DateTime
+  createdBy       String   @default("auto")
+  createdAt       DateTime @default(now())
+}
+
+model PromoRedemption {
+  id         String   @id @default(cuid())
+  code       String
+  accountId  String
+  redeemedAt DateTime @default(now())
+
+  @@unique([code, accountId])
+}

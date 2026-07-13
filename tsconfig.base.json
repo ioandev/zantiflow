@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "//": "Shared TS compiler options for every package/app. Extend this and set the module system",
+  "//2": "(module/moduleResolution/lib/jsx) + emit paths (outDir/rootDir/include) locally — those",
+  "//3": "resolve relative to THIS file under `extends`, so they must live in each package config.",
+  "compilerOptions": {
+    "target": "ES2022",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  }
+}

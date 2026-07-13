@@ -1,0 +1,53 @@
+{
+  "name": "@zantiflow/oauth",
+  "version": "0.1.0",
+  "description": "Framework-agnostic Sign in with Google & Apple — provider config in, normalized profile out. Server-side (Node).",
+  "license": "Apache-2.0",
+  "author": "ioandev",
+  "homepage": "https://github.com/ioandev/zantiflow/tree/main/packages/oauth#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ioandev/zantiflow.git",
+    "directory": "packages/oauth"
+  },
+  "bugs": {
+    "url": "https://github.com/ioandev/zantiflow/issues"
+  },
+  "type": "commonjs",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "oauth",
+    "oidc",
+    "google",
+    "apple",
+    "sign-in-with-apple",
+    "authentication"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist",
+    "test": "vitest run",
+    "prepublishOnly": "npm run clean && npm run build"
+  },
+  "dependencies": {
+    "jose": "^6.2.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "typescript": "^5.9.3"
+  }
+}

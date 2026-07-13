@@ -1,0 +1,60 @@
+---
+title: Plugin — getting started
+description: Install the Zellij plugin, pair it, and start reporting.
+---
+
+The plugin is a WebAssembly module (`zantiflow.wasm`) built from Rust. It targets `wasm32-wasip1` and
+is pinned to the Zellij version it was built against.
+
+## 1. Get the plugin
+
+Download `zantiflow.wasm` from the GitHub Releases page (verify the `.sha256`), or build it yourself:
+
+```bash
+cargo build -p zantiflow-plugin --target wasm32-wasip1 --release
+# → target/wasm32-wasip1/release/zantiflow_plugin.wasm
+```
+
+## 2. Configure it in a Zellij layout
+
+```kdl
+pane {
+    plugin location="file:/absolute/path/to/zantiflow.wasm" {
+        // server_url is OPTIONAL — it defaults to the hosted service (https://zantiflow.com).
+        // Set it only when self-hosting your own backend.
+        server_url    "https://your-backend.example"
+        // Either paste an ingest token from the dashboard…
+        token         "ztf_…"
+        // …or omit it to use device pairing (see below).
+        machine_name  "alias:my-laptop"   // "real" | "alias:<text>" | "hidden"
+        full          "true"              // privacy master switch
+        session_names "send"              // per-field: send | hidden
+        tab_names     "send"
+        pane_names    "send"
+        pane_output   "false"             // on-demand pane output is OFF by default
+    }
+}
+```
+
+The plugin requests four permissions on first load: **read application state**, **web access**, **read
+pane contents**, and **run commands** (only used to look up your hostname when `machine_name` is
+`real`). Grant them in the plugin pane.
+
+## 3. Pair a device (no token)
+
+If you leave `token` out, the plugin prints a short code. Open **zantiflow.com/pair** (signed in),
+enter the code, and the plugin receives a token automatically — it never leaves your machine in
+plaintext beyond that one delivery.
+
+## Configuration keys
+
+| Key | Values | Notes |
+| --- | --- | --- |
+| `server_url` | `https://…` (or `http://localhost`) | HTTPS only, except localhost; **optional** — defaults to `https://zantiflow.com` |
+| `token` | `ztf_…` | omit to use device pairing |
+| `machine_name` | `real` \| `alias:<text>` \| `hidden` | invalid → fails closed to hidden |
+| `full` | `true` \| `false` | master privacy baseline |
+| `session_names` / `tab_names` / `pane_names` | `send` \| `hidden` | per-field overrides |
+| `pane_output` | `true` \| `false` | on-demand output channel (default off) |
+
+Settings can change **without a restart** via Zellij's `PluginConfigurationChanged` event.

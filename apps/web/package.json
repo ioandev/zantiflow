@@ -1,0 +1,28 @@
+{
+  "name": "@zantiflow/web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "zantiflow dashboard — Next.js PWA. Signs in with Google, shows live machines/sessions/tabs/panes.",
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start -p 3000",
+    "test": "vitest run",
+    "test:e2e": "next build && playwright test",
+    "test:e2e:run": "playwright test",
+    "test:e2e:thinking": "next build && E2E_THINKING=1 playwright test e2e/thinking.spec.ts"
+  },
+  "dependencies": {
+    "next": "16.2.10",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.61.1",
+    "@types/node": "^26.1.1",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.10"
+  }
+}

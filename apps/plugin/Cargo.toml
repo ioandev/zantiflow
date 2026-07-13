@@ -1,0 +1,33 @@
+[package]
+name = "zantiflow-plugin"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "Zellij plugin that reports session/tab/pane telemetry to a zantiflow backend."
+publish = false
+
+[lib]
+# rlib = so native unit tests can link the pure logic. The WASM plugin artifact is the BINARY target
+# below (src/main.rs), NOT a cdylib: Zellij requires a `_start` export, which only a binary crate emits
+# (via `register_plugin!`'s `fn main`). A cdylib produces no `_start` and fails to load.
+crate-type = ["rlib"]
+
+# The plugin itself: a WASI command. Named `zantiflow_plugin` so the artifact is `zantiflow_plugin.wasm`.
+[[bin]]
+name = "zantiflow_plugin"
+path = "src/main.rs"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# Rust's regex crate is LINEAR-TIME (no catastrophic backtracking) → the secret-scrub ruleset is
+# ReDoS-safe by construction (ADR-0005/0017 pattern-safety), including any user-supplied patterns.
+regex = "1"
+
+# zellij-tile is WASM-only: the FFI adapter (`plugin` module) is compiled solely for wasm32, so the
+# pure logic (config/privacy/snapshot/fingerprint) builds and unit-tests on the host without it.
+# Pinned to the running Zellij (0.44.3) — its Event/Permission enums are #[non_exhaustive].
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+zellij-tile = "0.44.3"
+# WASI-backed CSRNG for the machineId + fingerprint salt (used only in the wasm adapter).
+getrandom = "0.4"

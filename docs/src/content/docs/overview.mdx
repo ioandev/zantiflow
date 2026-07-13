@@ -1,0 +1,36 @@
+---
+title: Overview
+description: What zantiflow is and how its pieces fit together.
+---
+
+**zantiflow** gives you a live view of every Zellij terminal session on your machines — sessions →
+tabs → panes, updated once a second — and pings you when a pane needs your attention (for example, a
+Claude session waiting on input).
+
+## The pieces
+
+- **Plugin** (Rust → WebAssembly, `zellij-tile`) runs inside Zellij. Once a second it builds a
+  snapshot of your sessions/tabs/panes and POSTs it to the backend. **Privacy is applied in the plugin
+  before anything is sent** — redacted names never leave your machine.
+- **Backend** (Node/TypeScript/Express + MariaDB) is multi-tenant. It authenticates the plugin with a
+  write-only ingest token, stores the latest snapshot per machine, and serves a read/management API to
+  the dashboard.
+- **Dashboard** (Next.js PWA) shows your machines live over Server-Sent Events, manages tokens, and —
+  after you grant permission — delivers Web Push notifications.
+- **Bots** (Python: Discord + Telegram) deliver notifications as DMs for PRO users.
+
+## The loop
+
+```
+Zellij plugin  ──POST /api/v1/ingest──▶  Backend  ──SSE /api/v1/stream──▶  Dashboard
+     ▲                                      │
+     └────────── on-demand pane output ─────┘        attention fires ──▶ Web Push / bot DM
+```
+
+## Two auth planes (never mixed)
+
+- **Ingest tokens** (`ztf_…`) are **write-only** — they push snapshots and nothing else.
+- **Owner sessions** (Google sign-in → `ztf_session` cookie) gate reading and managing your account.
+
+See [Privacy](/privacy/) for exactly what is and isn't sent, and
+[What ADRs are](/adrs/) for how decisions are recorded.

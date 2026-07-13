@@ -1,0 +1,46 @@
+name: CI
+
+# Pre-merge validation for PRs and feature branches. `main` is intentionally excluded — pushes to main
+# are validated + published by docker-publish.yml (which runs this same test suite as its gate), so we
+# don't double-run. There is no `develop` branch (temporary).
+on:
+  pull_request:
+  push:
+    branches-ignore: [main]
+
+# Newer pushes to the same ref cancel in-flight runs. (A feature branch with an open PR can still run
+# twice — once for the push, once for the pull_request event — which is the usual GitHub trade-off.)
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # The full test suite (single source of truth in tests.yml).
+  tests:
+    uses: ./.github/workflows/tests.yml
+
+  # Validate every service image builds (no push) so a broken Dockerfile is caught before merge.
+  # Multi-arch build + push to Docker Hub happens in docker-publish.yml; the plugin .wasm ships via
+  # plugin-release.yml (ADR-0021/0022). Single-arch (amd64) keeps PR feedback fast; the gha cache is
+  # shared (per-service scope) with the publish workflow's amd64 leg.
+  image-build:
+    needs: tests
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [backend, web, discord-bot, telegram-bot]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build ${{ matrix.service }} image (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/${{ matrix.service }}/Dockerfile
+          platforms: linux/amd64
+          push: false
+          load: false
+          tags: zantiflow/${{ matrix.service }}:ci
+          cache-from: type=gha,scope=${{ matrix.service }}-linux-amd64
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}-linux-amd64

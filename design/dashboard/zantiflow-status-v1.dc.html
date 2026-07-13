@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#eceff2;font-family:"IBM Plex Sans",system-ui,sans-serif}
+a{color:#2f6fd0}a:hover{color:#1d5ab8}
+.dv-turn{padding:40px 44px 32px;border-bottom:1px solid rgba(0,0,0,.08);scroll-margin-top:16px}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 8px}
+.dv-tid{font:600 10px "IBM Plex Mono",monospace;padding:3px 7px;background:#1a1a1a;color:#fff;border-radius:4px;text-decoration:none}
+.dv-tname{font:600 13px/1.2 "IBM Plex Sans",sans-serif;color:#1a1a1a}
+.dv-note{margin:0 0 22px;font:400 11.5px/1.5 "IBM Plex Sans",sans-serif;color:rgba(0,0,0,.55);max-width:760px}
+.dv-opts{display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:9px;scroll-margin-top:16px}
+.dv-oid{font:600 10.5px "IBM Plex Mono",monospace;padding:3px 7px;background:rgba(0,0,0,.08);color:#1a1a1a;border-radius:5px;text-decoration:none}
+.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 11px/1.3 "IBM Plex Sans",sans-serif;color:rgba(0,0,0,.55)}
+.dv-card{max-width:100%;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);overflow:hidden}
+.dv-opt:target .dv-oid{background:#2a78d6;color:#fff}
+.dv-next{margin:22px 0 0;font:12px/1.5 "IBM Plex Sans",sans-serif;color:rgba(0,0,0,.5)}
+</style>
+</helmet>
+
+<section class="dv-turn" id="t1" data-screen-label="Turn 1 — status website directions">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Zantiflow status website — machines overview + detail tree, three tree treatments</span></div>
+<p class="dv-note">Assumptions: clean light ops dashboard (IBM Plex Sans/Mono), read-only, static snapshot. Data follows the v3 wire contract — nullable names render as <span style="font-family:'IBM Plex Mono',monospace">&lt;hidden&gt;</span>, unobserved activity renders as Unknown, resurrectable sessions are leaves. Since the product's job is "did my agent finish?", per-pane activity age is the hero signal: green = active &lt;60s, gray = quiet, dashed = Unknown. Machine three is fully redacted + stale, to exercise those states honestly.</p>
+<div class="dv-opts">
+
+<!-- ============ 1a: full app, console-faithful tree ============ -->
+<div class="dv-opt" id="1a">
+<div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Full app — console-faithful monospace tree with indent guides</div>
+<div class="dv-card" style="width:1240px">
+<div style="display:flex;flex-direction:column;background:#f5f7f9;min-height:760px" data-screen-label="1a app">
+  <!-- top bar -->
+  <div style="display:flex;align-items:center;gap:12px;padding:0 20px;height:52px;background:#ffffff;border-bottom:1px solid #e4e9ee">
+    <div style="display:flex;align-items:center;gap:9px">
+      <div style="width:22px;height:22px;border-radius:6px;background:#1c242e;color:#7be3ae;display:grid;place-items:center;font:600 12px 'IBM Plex Mono',monospace">z</div>
+      <div style="font:600 14px 'IBM Plex Mono',monospace;color:#1c242e;letter-spacing:.01em">zantiflow</div>
+    </div>
+    <div style="display:flex;gap:2px;margin-left:24px">
+      <div style="font:500 13px 'IBM Plex Sans',sans-serif;color:#1c242e;padding:6px 12px;border-radius:6px;background:#eef2f5">Machines</div>
+      <div style="font:500 13px 'IBM Plex Sans',sans-serif;color:#61707e;padding:6px 12px;border-radius:6px">Tokens</div>
+    </div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:10px">
+      <div style="font:400 12px 'IBM Plex Sans',sans-serif;color:#61707e">maya@gmail.com</div>
+      <div style="width:26px;height:26px;border-radius:50%;background:#d7e3f2;color:#2f6fd0;display:grid;place-items:center;font:600 11px 'IBM Plex Sans',sans-serif">M</div>
+    </div>
+  </div>
+  <div style="display:flex;flex:1;min-height:0">
+    <!-- machines rail -->
+    <div style="width:264px;flex:none;border-right:1px solid #e4e9ee;background:#fbfcfd;padding:14px 10px;display:flex;flex-direction:column;gap:6px">
+      <div style="font:600 10.5px 'IBM Plex Sans',sans-serif;color:#8b98a5;text-transform:uppercase;letter-spacing:.08em;padding:0 8px 4px">Machines · 3</div>
+      <!-- selected -->
+      <div style="background:#ffffff;border:1px solid #cfd9e2;border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;box-shadow:0 1px 2px rgba(16,24,32,.05)">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="width:7px;height:7px;border-radius:50%;background:#22b573;flex:none"></span>
+          <span style="font:600 13px 'IBM Plex Mono',monospace;color:#1c242e">red-laptop</span>
+          <span style="margin-left:auto;font:500 10px 'IBM Plex Sans',sans-serif;color:#1f9d63;background:#e5f6ee;border-radius:99px;padding:2px 7px">live</span>
+        </div>
+        <div style="font:400 11.5px 'IBM Plex Sans',sans-serif;color:#61707e">3 sessions · 3 tabs · 6 panes</div>
+      </div>
+      <div style="border:1px solid transparent;border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:6px" style-hover="background:#f1f4f7">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="width:7px;height:7px;border-radius:50%;background:#22b573;flex:none"></span>
+          <span style="font:600 13px 'IBM Plex Mono',monospace;color:#1c242e">buildbox</span>
+          <span style="font:500 9.5px 'IBM Plex Sans',sans-serif;color:#7a6a9e;background:#efeaf8;border-radius:99px;padding:1px 6px">alias</span>
+          <span style="margin-left:auto;font:500 10px 'IBM Plex Sans',sans-serif;color:#1f9d63;background:#e5f6ee;border-radius:99px;padding:2px 7px">live</span>
+        </div>
+        <div style="font:400 11.5px 'IBM Plex Sans',sans-serif;color:#61707e">1 session · 2 tabs · 3 panes</div>
+      </div>
+      <div style="border:1px solid transparent;border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:6px" style-hover="background:#f1f4f7">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="width:7px;height:7px;border-radius:50%;background:#c8b47a;flex:none;box-shadow:none"></span>
+          <span style="font:500 13px 'IBM Plex Mono',monospace;color:#8b98a5;font-style:italic">&lt;machine hidden&gt;</span>
+          <span style="margin-left:auto;font:500 10px 'IBM Plex Sans',sans-serif;color:#a1770a;background:#faf3df;border-radius:99px;padding:2px 7px">seen 42m ago</span>
+        </div>
+        <div style="font:400 11.5px 'IBM Plex Sans',sans-serif;color:#61707e">2 sessions · names hidden</div>
+      </div>
+    </div>
+    <!-- detail -->
+    <div style="flex:1;min-width:0;padding:22px 28px;display:flex;flex-direction:column;gap:18px">
+      <!-- machine header -->
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="width:9px;height:9px;border-radius:50%;background:#22b573"></span>
+          <span style="font:600 20px 'IBM Plex Mono',monospace;color:#1c242e">red-laptop</span>
+          <span style="font:500 10.5px 'IBM Plex Sans',sans-serif;color:#4b6e93;background:#e8f0f9;border-radius:99px;padding:2px 8px">real hostname</span>
+          <span style="font:500 10.5px 'IBM Plex Sans',sans-serif;color:#1f9d63;background:#e5f6ee;border-radius:99px;padding:2px 8px">privacy: full</span>
+          <span style="margin-left:auto;font:400 12px 'IBM Plex Sans',sans-serif;color:#61707e">updated 1s ago</span>
+        </div>
+        <div style="display:flex;gap:18px;font:400 11.5px 'IBM Plex Sans',sans-serif;color:#8b98a5">
+          <span>first seen Mar 12, 2026</span>
+          <span>last seen just now</span>
+          <span style="font-family:'IBM Plex Mono',monospace">m_9f3c1a70</span>
+        </div>
+      </div>
+      <!-- tree -->
+      <div style="background:#ffffff;border:1px solid #e4e9ee;border-radius:10px;padding:18px 22px;font-family:'IBM Plex Mono',monospace;font-size:13px;color:#1c242e;display:flex;flex-direction:column;gap:2px">
+        <!-- session: main -->
+        <div style="display:flex;align-items:center;gap:9px;padding:6px 0">
+          <span style="color:#22b573;font-size:11px">●</span>
+          <span style="font-weight:600">main</span>
+          <span style="font:500 10px 'IBM Plex Sans',sans-serif;color:#2f6fd0;background:#e8f0f9;border-radius:99px;padding:1px 7px">current</span>
+          <span style="font:500 10px 'IBM Plex Sans',sans-serif;color:#1f9d63;background:#e5f6ee;border-radius:99px;padding:1px 7px">live</span>
+        </div>
+        <div style="margin-left:5px;border-left:1px solid #e4e9ee;padding-left:20px;display:flex;flex-direction:column;gap:2px">
+          <div style="display:flex;align-items:center;gap:9px;padding:5px 0">
+            <span style="color:#61707e;font-size:11px">▸</span>
+            <span style="font-weight:500">editor</span>
+            <span style="font:500 10px 'IBM Plex Sans',sans-serif;color:#2f6fd0;background:#e8f0f9;border-radius:99px;padding:1px 7px">active</span>
+          </div>
+          <div style="margin-left:4px;border-left:1px solid #eef2f5;padding-left:20px;display:flex;flex-direction:column">
+            <div style="display:flex;align-items:baseline;gap:12px;padding:4px 0">
+              <span style="color:#b3bec8;font-size:10px">•</span>
+              <span style="font-weight:500;min-width:120px">nvim</span>
+              <span style="color:#8b98a5;flex:1">nvim src/main.rs</span>
+              <span style="font:500 10px 'IBM Plex Sans',sans-serif;color:#2f6fd0;background:#e8f0f9;border-radius:99px;padding:1px 7px">focused</span>
+              <span style="display:inline-flex;align-items:center;gap:6px;color:#1f9d63;min-width:140px;justify-content:flex-end"><span style="width:6px;height:6px;border-radius:50%;background:#22b573"></span>updated 3s ago</span>
+            </div>
+            <div style="display:flex;align-items:baseline;gap:12px;padding:4px 0">
+              <span style="color:#b3bec8;font-size:10px">•</span>
+              <span style="font-weight:500;min-width:120px">cargo-watch</span>
+              <span style="color:#8b98a5;flex:1">cargo watch -x check</span>
+              <span style="color:#61707e;min-width:140px;text-align:right">updated 41s ago</span>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:9px;padding:5px 0">
+            <span style="color:#61707e;font-size:11px">▸</span>
+            <span style="font-weight:500">agent</span>
+          </div>
+          <div style="margin-left:4px;border-left:1px solid #eef2f5;padding-left:20px;display:flex;flex-direction:column">
+            <div style="display:flex;align-items:baseline;gap:12px;padding:4px 0">
+              <span style="color:#b3bec8;font-size:10px">•</span>
+              <span style="font-weight:500;min-width:120px">claude</span>
+              <span style="color:#8b98a5;flex:1">claude</span>
+              <span style="color:#a1770a;min-width:140px;text-align:right;background:#faf3df;border-radius:6px;padding:1px 8px">quiet 12m</span>
+            </div>
+            <div style="display:flex;align-items:baseline;gap:12px;padding:4px 0">
+              <span style="color:#b3bec8;font-size:10px">•</span>
+              <span style="font-weight:500;min-width:120px">tail-logs</span>
+              <span style="color:#8b98a5;flex:1">tail -f target/debug.log</span>
+              <span style="color:#8b98a5;min-width:140px;text-align:right;border:1px dashed #cfd9e2;border-radius:6px;padding:0 8px">Unknown</span>
+            </div>
+          </div>
+        </div>
+        <!-- session: scratch -->
+        <div style="display:flex;align-items:center;gap:9px;padding:6px 0;margin-top:8px">
+          <span style="color:#22b573;font-size:11px">●</span>
+          <span style="font-weight:600">scratch</span>
+          <span style="font:500 10px 'IBM Plex Sans',sans-serif;color:#1f9d63;background:#e5f6ee;border-radius:99px;padding:1px 7px">live</span>
+        </div>
+        <div style="margin-left:5px;border-left:1px solid #e4e9ee;padding-left:20px;display:flex;flex-direction:column;gap:2px">
+          <div style="display:flex;align-items:center;gap:9px;padding:5px 0">
+            <span style="color:#61707e;font-size:11px">▸</span>
+            <span style="font-weight:500">shell</span>
+            <span style="font:500 10px 'IBM Plex Sans',sans-serif;color:#2f6fd0;background:#e8f0f9;border-radius:99px;padding:1px 7px">active</span>
+          </div>
+          <div style="margin-left:4px;border-left:1px solid #eef2f5;padding-left:20px;display:flex;flex-direction:column">
+            <div style="display:flex;align-items:baseline;gap:12px;padding:4px 0">
+              <span style="color:#b3bec8;font-size:10px">•</span>
+              <span style="font-weight:500;min-width:120px">zsh</span>
+              <span style="color:#8b98a5;flex:1">zsh</span>
+              <span style="font:500 10px 'IBM Plex Sans',sans-serif;color:#2f6fd0;background:#e8f0f9;border-radius:99px;padding:1px 7px">focused</span>
+              <span style="color:#61707e;min-width:140px;text-align:right">updated 2m ago</span>
+            </div>
+            <div style="display:flex;align-items:baseline;gap:12px;padding:4px 0">
+              <span style="color:#b3bec8;font-size:10px">•</span>
+              <span style="font-weight:500;min-width:120px;color:#8b98a5;text-decoration:line-through;text-decoration-color:#cfd9e2">ssh-prod</span>
+              <span style="color:#b3bec8;flex:1">ssh deploy@prod-1</span>
+              <span style="font:500 10px 'IBM Plex Sans',sans-serif;color:#8b6d6d;background:#f6ecec;border-radius:99px;padding:1px 7px">exited</span>
+              <span style="color:#8b98a5;min-width:140px;text-align:right">updated 1h ago</span>
+            </div>
+          </div>
+        </div>
+        <!-- session: old-build (resurrectable leaf) -->
+        <div style="display:flex;align-items:center;gap:9px;padding:6px 0;margin-top:8px;color:#8b98a5">
+          <span style="font-size:11px">○</span>
+          <span style="font-weight:500">old-build</span>
+          <span style="font:500 10px 'IBM Plex Sans',sans-serif;color:#61707e;background:#eef2f5;border-radius:99px;padding:1px 7px">resurrectable</span>
+          <span style="font:400 11px 'IBM Plex Sans',sans-serif;color:#8b98a5">died 5m ago</span>
+        </div>
+      </div>
+      <div style="font:400 11px 'IBM Plex Sans',sans-serif;color:#b3bec8">Read-only view. Structure and activity timing are shown even when names are hidden.</div>
+    </div>
+  </div>
+</div>
+</div>
+</div>
+
+<!-- ============ 1b: nested panels ============ -->
+<div class="dv-opt" id="1b">
+<div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>Detail as nested panels — session cards, tab groups, pane rows</div>
+<div class="dv-card" style="width:880px">
+<div style="background:#f5f7f9;padding:24px 28px;display:flex;flex-direction:column;gap:16px" data-screen-label="1b nested panels">
+  <div style="display:flex;align-items:center;gap:10px">
+    <span style="width:9px;height:9px;border-radius:50%;background:#22b573"></span>
+    <span style="font:600 18px 'IBM Plex Mono',monospace;color:#1c242e">red-laptop</span>
+    <span style="font:500 10.5px 'IBM Plex Sans',sans-serif;color:#4b6e93;background:#e8f0f9;border-radius:99px;padding:2px 8px">real hostname</span>
+    <span style="font:500 10.5px 'IBM Plex Sans',sans-serif;color:#1f9d63;background:#e5f6ee;border-radius:99px;padding:2px 8px">privacy: full</span>
+    <span style="margin-left:auto;font:400 12px 'IBM Plex Sans',sans-serif;color:#61707e">updated 1s ago</span>
+  </div>
+  <!-- session card: main -->
+  <div style="background:#ffffff;border:1px solid #e4e9ee;border-radius:12px;overflow:hidden;box-shadow:0 1px 2px rgba(16,24,32,.04)">
+    <div style="display:flex;align-items:center;gap:10px;padding:12px 18px;border-bottom:1px solid #eef2f5;background:#fbfcfd">
+      <span style="width:8px;height:8px;border-radius:50%;background:#22b573"></span>
+      <span style="font:600 14px 'IBM Plex Sans',sans-serif;color:#1c242e">main</span>
+      <span style="font:500 10px 'IBM Plex Sans',sans-serif;color:#2f6fd0;background:#e8f0f9;border-radius:99px;padding:2px 8px">current</span>
+      <span style="font:500 10px 'IBM Plex Sans',sans-serif;color:#1f9d63;background:#e5f6ee;border-radius:99px;padding:2px 8px">live</span>
+      <span style="margin-left:auto;font:400 11.5px 'IBM Plex Sans',sans-serif;color:#8b98a5">2 tabs · 4 panes</span>
+    </div>
+    <div style="display:flex;flex-direction:column">
+      <div style="display:flex;align-items:center;gap:8px;padding:9px 18px 4px">
+        <span style="font:600 11px 'IBM Plex Sans',sans-serif;color:#61707e;text-transform:uppercase;letter-spacing:.06em">editor</span>
+        <span style="font:500 9.5px 'IBM Plex Sans',sans-serif;color:#2f6fd0;background:#e8f0f9;border-radius:99px;padding:1px 6px">active</span>
+      </div>
+      <div style="display:grid;grid-template-columns:180px 1fr 90px 150px;align-items:center;column-gap:14px;padding:8px 18px;border-bottom:1px solid #f3f6f8">
+        <span style="font:500 13px 'IBM Plex Mono',monospace;color:#1c242e">nvim</span>
+        <span style="font:400 12.5px 'IBM Plex Mono',monospace;color:#8b98a5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">nvim src/main.rs</span>
+        <span style="font:500 10px 'IBM Plex Sans',sans-serif;color:#2f6fd0;background:#e8f0f9;border-radius:99px;padding:2px 8px;justify-self:start">focused</span>
+        <span style="display:inline-flex;align-items:center;gap:6px;font:500 12px 'IBM Plex Sans',sans-serif;color:#1f9d63;justify-self:end"><span style="width:6px;height:6px;border-radius:50%;background:#22b573"></span>3s ago</span>
+      </div>
+      <div style="display:grid;grid-template-columns:180px 1fr 90px 150px;align-items:center;column-gap:14px;padding:8px 18px;border-bottom:1px solid #f3f6f8">
+        <span style="font:500 13px 'IBM Plex Mono',monospace;color:#1c242e">cargo-watch</span>
+        <span style="font:400 12.5px 'IBM Plex Mono',monospace;color:#8b98a5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">cargo watch -x check</span>
+        <span></span>
+        <span style="font:400 12px 'IBM Plex Sans',sans-serif;color:#61707e;justify-self:end">41s ago</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding:9px 18px 4px">
+        <span style="font:600 11px 'IBM Plex Sans',sans-serif;color:#61707e;text-transform:uppercase;letter-spacing:.06em">agent</span>
+      </div>
+      <div style="display:grid;grid-template-columns:180px 1fr 90px 150px;align-items:center;column-gap:14px;padding:8px 18px;border-bottom:1px solid #f3f6f8">
+        <span style="font:500 13px 'IBM Plex Mono',monospace;color:#1c242e">claude</span>
+        <span style="font:400 12.5px 'IBM Plex Mono',monospace;color:#8b98a5">claude</span>
+        <span></span>
+        <span style="font:500 12px 'IBM Plex Sans',sans-serif;color:#a1770a;background:#faf3df;border-radius:6px;padding:2px 9px;justify-self:end">quiet 12m</span>
+      </div>
+      <div style="display:grid;grid-template-columns:180px 1fr 90px 150px;align-items:center;column-gap:14px;padding:8px 18px">
+        <span style="font:500 13px 'IBM Plex Mono',monospace;color:#1c242e">tail-logs</span>
+        <span style="font:400 12.5px 'IBM Plex Mono',monospace;color:#8b98a5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">tail -f target/debug.log</span>
+        <span></span>
+        <span style="font:400 12px 'IBM Plex Sans',sans-serif;color:#8b98a5;border:1px dashed #cfd9e2;border-radius:6px;padding:1px 9px;justify-self:end">Unknown</span>
+      </div>
+    </div>
+  </div>
+  <!-- session card: scratch -->
+  <div style="background:#ffffff;border:1px solid #e4e9ee;border-radius:12px;overflow:hidden;box-shadow:0 1px 2px rgba(16,24,32,.04)">
+    <div style="display:flex;align-items:center;gap:10px;padding:12px 18px;border-bottom:1px solid #eef2f5;background:#fbfcfd">
+      <span style="width:8px;height:8px;border-radius:50%;background:#22b573"></span>
+      <span style="font:600 14px 'IBM Plex Sans',sans-serif;color:#1c242e">scratch</span>
+      <span style="font:500 10px 'IBM Plex Sans',sans-serif;color:#1f9d63;background:#e5f6ee;border-radius:99px;padding:2px 8px">live</span>
+      <span style="margin-left:auto;font:400 11.5px 'IBM Plex Sans',sans-serif;color:#8b98a5">1 tab · 2 panes</span>
+    </div>
+    <div style="display:flex;flex-direction:column">
+      <div style="display:flex;align-items:center;gap:8px;padding:9px 18px 4px">
+        <span style="font:600 11px 'IBM Plex Sans',sans-serif;color:#61707e;text-transform:uppercase;letter-spacing:.06em">shell</span>
+        <span style="font:500 9.5px 'IBM Plex Sans',sans-serif;color:#2f6fd0;background:#e8f0f9;border-radius:99px;padding:1px 6px">active</span>
+      </div>
+      <div style="display:grid;grid-template-columns:180px 1fr 90px 150px;align-items:center;column-gap:14px;padding:8px 18px;border-bottom:1px solid #f3f6f8">
+        <span style="font:500 13px 'IBM Plex Mono',monospace;color:#1c242e">zsh</span>
+        <span style="font:400 12.5px 'IBM Plex Mono',monospace;color:#8b98a5">zsh</span>
+        <span style="font:500 10px 'IBM Plex Sans',sans-serif;color:#2f6fd0;background:#e8f0f9;border-radius:99px;padding:2px 8px;justify-self:start">focused</span>
+        <span style="font:400 12px 'IBM Plex Sans',sans-serif;color:#61707e;justify-self:end">2m ago</span>
+      </div>
+      <div style="display:grid;grid-template-columns:180px 1fr 90px 150px;align-items:center;column-gap:14px;padding:8px 18px">
+        <span style="font:500 13px 'IBM Plex Mono',monospace;color:#8b98a5;text-decoration:line-through;text-decoration-color:#cfd9e2">ssh-prod</span>
+        <span style="font:400 12.5px 'IBM Plex Mono',monospace;color:#b3bec8">ssh deploy@prod-1</span>
+        <span style="font:500 10px 'IBM Plex Sans',sans-serif;color:#8b6d6d;background:#f6ecec;border-radius:99px;padding:2px 8px;justify-self:start">exited</span>
+        <span style="font:400 12px 'IBM Plex Sans',sans-serif;color:#8b98a5;justify-self:end">1h ago</span>
+      </div>
+    </div>
+  </div>
+  <!-- dead session: leaf -->
+  <div style="background:#fbfcfd;border:1px dashed #d5dde4;border-radius:12px;display:flex;align-items:center;gap:10px;padding:12px 18px;color:#8b98a5">
+    <span style="width:8px;height:8px;border-radius:50%;border:1.5px solid #b3bec8;background:transparent"></span>
+    <span style="font:500 14px 'IBM Plex Sans',sans-serif;color:#61707e">old-build</span>
+    <span style="font:500 10px 'IBM Plex Sans',sans-serif;color:#61707e;background:#eef2f5;border-radius:99px;padding:2px 8px">resurrectable</span>
+    <span style="font:400 11.5px 'IBM Plex Sans',sans-serif">died 5m ago</span>
+    <span style="margin-left:auto;font:400 11px 'IBM Plex Sans',sans-serif;color:#b3bec8">no tab/pane detail for dead sessions</span>
+  </div>
+</div>
+</div>
+</div>
+
+<!-- ============ 1c: grouped table ============ -->
+<div class="dv-opt" id="1c">
+<div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Detail as a grouped table — dense, scannable, Grafana-ish</div>
+<div class="dv-card" style="width:880px">
+<div style="background:#ffffff;padding:22px 26px;display:flex;flex-direction:column;gap:14px" data-screen-label="1c grouped table">
+  <div style="display:flex;align-items:center;gap:10px">
+    <span style="width:9px;height:9px;border-radius:50%;background:#22b573"></span>
+    <span style="font:600 18px 'IBM Plex Mono',monospace;color:#1c242e">red-laptop</span>
+    <span style="font:500 10.5px 'IBM Plex Sans',sans-serif;color:#4b6e93;background:#e8f0f9;border-radius:99px;padding:2px 8px">real hostname</span>
+    <span style="font:500 10.5px 'IBM Plex Sans',sans-serif;color:#1f9d63;background:#e5f6ee;border-radius:99px;padding:2px 8px">privacy: full</span>
+    <span style="margin-left:auto;font:400 12px 'IBM Plex Sans',sans-serif;color:#61707e">updated 1s ago</span>
+  </div>
+  <div style="border:1px solid #e4e9ee;border-radius:10px;overflow:hidden">
+    <!-- header row -->
+    <div style="display:grid;grid-template-columns:1fr 240px 100px 130px;column-gap:14px;padding:8px 16px;background:#f5f7f9;border-bottom:1px solid #e4e9ee;font:600 10.5px 'IBM Plex Sans',sans-serif;color:#8b98a5;text-transform:uppercase;letter-spacing:.07em">
+      <span>Pane</span><span>Command</span><span>Flags</span><span style="text-align:right">Last activity</span>
+    </div>
+    <!-- group: main -->
+    <div style="display:flex;align-items:center;gap:9px;padding:9px 16px;background:#fbfcfd;border-bottom:1px solid #eef2f5">
+      <span style="color:#22b573;font-size:10px">●</span>
+      <span style="font:600 12.5px 'IBM Plex Sans',sans-serif;color:#1c242e">main</span>
+      <span style="font:500 9.5px 'IBM Plex Sans',sans-serif;color:#2f6fd0;background:#e8f0f9;border-radius:99px;padding:1px 6px">current</span>
+      <span style="font:500 9.5px 'IBM Plex Sans',sans-serif;color:#1f9d63;background:#e5f6ee;border-radius:99px;padding:1px 6px">live</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 240px 100px 130px;column-gap:14px;align-items:center;padding:7px 16px 7px 34px;border-bottom:1px solid #f3f6f8">
+      <span style="display:flex;align-items:baseline;gap:8px"><span style="font:400 10.5px 'IBM Plex Sans',sans-serif;color:#b3bec8">editor ▸</span><span style="font:500 12.5px 'IBM Plex Mono',monospace;color:#1c242e">nvim</span></span>
+      <span style="font:400 12px 'IBM Plex Mono',monospace;color:#8b98a5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">nvim src/main.rs</span>
+      <span style="display:flex;gap:4px"><span style="font:500 9.5px 'IBM Plex Sans',sans-serif;color:#2f6fd0;background:#e8f0f9;border-radius:99px;padding:1px 6px">focused</span></span>
+      <span style="display:inline-flex;align-items:center;gap:6px;font:500 11.5px 'IBM Plex Sans',sans-serif;color:#1f9d63;justify-self:end"><span style="width:6px;height:6px;border-radius:50%;background:#22b573"></span>3s ago</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 240px 100px 130px;column-gap:14px;align-items:center;padding:7px 16px 7px 34px;border-bottom:1px solid #f3f6f8">
+      <span style="display:flex;align-items:baseline;gap:8px"><span style="font:400 10.5px 'IBM Plex Sans',sans-serif;color:#b3bec8">editor ▸</span><span style="font:500 12.5px 'IBM Plex Mono',monospace;color:#1c242e">cargo-watch</span></span>
+      <span style="font:400 12px 'IBM Plex Mono',monospace;color:#8b98a5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">cargo watch -x check</span>
+      <span></span>
+      <span style="font:400 11.5px 'IBM Plex Sans',sans-serif;color:#61707e;justify-self:end">41s ago</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 240px 100px 130px;column-gap:14px;align-items:center;padding:7px 16px 7px 34px;border-bottom:1px solid #f3f6f8">
+      <span style="display:flex;align-items:baseline;gap:8px"><span style="font:400 10.5px 'IBM Plex Sans',sans-serif;color:#b3bec8">agent ▸</span><span style="font:500 12.5px 'IBM Plex Mono',monospace;color:#1c242e">claude</span></span>
+      <span style="font:400 12px 'IBM Plex Mono',monospace;color:#8b98a5">claude</span>
+      <span></span>
+      <span style="font:500 11.5px 'IBM Plex Sans',sans-serif;color:#a1770a;background:#faf3df;border-radius:6px;padding:1px 8px;justify-self:end">quiet 12m</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 240px 100px 130px;column-gap:14px;align-items:center;padding:7px 16px 7px 34px;border-bottom:1px solid #eef2f5">
+      <span style="display:flex;align-items:baseline;gap:8px"><span style="font:400 10.5px 'IBM Plex Sans',sans-serif;color:#b3bec8">agent ▸</span><span style="font:500 12.5px 'IBM Plex Mono',monospace;color:#1c242e">tail-logs</span></span>
+      <span style="font:400 12px 'IBM Plex Mono',monospace;color:#8b98a5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">tail -f target/debug.log</span>
+      <span></span>
+      <span style="font:400 11.5px 'IBM Plex Sans',sans-serif;color:#8b98a5;border:1px dashed #cfd9e2;border-radius:6px;padding:0 8px;justify-self:end">Unknown</span>
+    </div>
+    <!-- group: scratch -->
+    <div style="display:flex;align-items:center;gap:9px;padding:9px 16px;background:#fbfcfd;border-bottom:1px solid #eef2f5">
+      <span style="color:#22b573;font-size:10px">●</span>
+      <span style="font:600 12.5px 'IBM Plex Sans',sans-serif;color:#1c242e">scratch</span>
+      <span style="font:500 9.5px 'IBM Plex Sans',sans-serif;color:#1f9d63;background:#e5f6ee;border-radius:99px;padding:1px 6px">live</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 240px 100px 130px;column-gap:14px;align-items:center;padding:7px 16px 7px 34px;border-bottom:1px solid #f3f6f8">
+      <span style="display:flex;align-items:baseline;gap:8px"><span style="font:400 10.5px 'IBM Plex Sans',sans-serif;color:#b3bec8">shell ▸</span><span style="font:500 12.5px 'IBM Plex Mono',monospace;color:#1c242e">zsh</span></span>
+      <span style="font:400 12px 'IBM Plex Mono',monospace;color:#8b98a5">zsh</span>
+      <span style="display:flex;gap:4px"><span style="font:500 9.5px 'IBM Plex Sans',sans-serif;color:#2f6fd0;background:#e8f0f9;border-radius:99px;padding:1px 6px">focused</span></span>
+      <span style="font:400 11.5px 'IBM Plex Sans',sans-serif;color:#61707e;justify-self:end">2m ago</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 240px 100px 130px;column-gap:14px;align-items:center;padding:7px 16px 7px 34px;border-bottom:1px solid #eef2f5">
+      <span style="display:flex;align-items:baseline;gap:8px"><span style="font:400 10.5px 'IBM Plex Sans',sans-serif;color:#b3bec8">shell ▸</span><span style="font:500 12.5px 'IBM Plex Mono',monospace;color:#8b98a5;text-decoration:line-through;text-decoration-color:#cfd9e2">ssh-prod</span></span>
+      <span style="font:400 12px 'IBM Plex Mono',monospace;color:#b3bec8">ssh deploy@prod-1</span>
+      <span style="display:flex;gap:4px"><span style="font:500 9.5px 'IBM Plex Sans',sans-serif;color:#8b6d6d;background:#f6ecec;border-radius:99px;padding:1px 6px">exited</span></span>
+      <span style="font:400 11.5px 'IBM Plex Sans',sans-serif;color:#8b98a5;justify-self:end">1h ago</span>
+    </div>
+    <!-- group: old-build -->
+    <div style="display:flex;align-items:center;gap:9px;padding:9px 16px;background:#fbfcfd;color:#8b98a5">
+      <span style="font-size:10px">○</span>
+      <span style="font:500 12.5px 'IBM Plex Sans',sans-serif;color:#61707e">old-build</span>
+      <span style="font:500 9.5px 'IBM Plex Sans',sans-serif;color:#61707e;background:#eef2f5;border-radius:99px;padding:1px 6px">resurrectable</span>
+      <span style="font:400 11px 'IBM Plex Sans',sans-serif">died 5m ago</span>
+      <span style="margin-left:auto;font:400 10.5px 'IBM Plex Sans',sans-serif;color:#b3bec8">no detail</span>
+    </div>
+  </div>
+</div>
+</div>
+</div>
+
+<!-- ============ 1d: dark mode tree ============ -->
+<div class="dv-opt" id="1d">
+<div class="dv-olabel"><a class="dv-oid" href="#1d">1d</a>Dark mode — <a class="dv-oid" href="#1a">1a</a>'s tree in the dark palette (auto via prefers-color-scheme)</div>
+<div class="dv-card" style="width:720px">
+<div style="background:#14181d;padding:22px 26px;display:flex;flex-direction:column;gap:14px" data-screen-label="1d dark tree">
+  <div style="display:flex;align-items:center;gap:10px">
+    <span style="width:9px;height:9px;border-radius:50%;background:#34c98a"></span>
+    <span style="font:600 17px 'IBM Plex Mono',monospace;color:#e8edf2">red-laptop</span>
+    <span style="font:500 10px 'IBM Plex Sans',sans-serif;color:#8fb4e0;background:rgba(80,130,190,.16);border-radius:99px;padding:2px 8px">real hostname</span>
+    <span style="font:500 10px 'IBM Plex Sans',sans-serif;color:#5fd6a1;background:rgba(52,201,138,.13);border-radius:99px;padding:2px 8px">privacy: full</span>
+    <span style="margin-left:auto;font:400 11.5px 'IBM Plex Sans',sans-serif;color:#7d8a97">updated 1s ago</span>
+  </div>
+  <div style="background:#1a2027;border:1px solid #262e37;border-radius:10px;padding:16px 20px;font-family:'IBM Plex Mono',monospace;font-size:13px;color:#dbe3ea;display:flex;flex-direction:column;gap:2px">
+    <div style="display:flex;align-items:center;gap:9px;padding:5px 0">
+      <span style="color:#34c98a;font-size:11px">●</span>
+      <span style="font-weight:600">main</span>
+      <span style="font:500 10px 'IBM Plex Sans',sans-serif;color:#8fb4e0;background:rgba(80,130,190,.16);border-radius:99px;padding:1px 7px">current</span>
+      <span style="font:500 10px 'IBM Plex Sans',sans-serif;color:#5fd6a1;background:rgba(52,201,138,.13);border-radius:99px;padding:1px 7px">live</span>
+    </div>
+    <div style="margin-left:5px;border-left:1px solid #262e37;padding-left:20px;display:flex;flex-direction:column;gap:2px">
+      <div style="display:flex;align-items:center;gap:9px;padding:4px 0">
+        <span style="color:#7d8a97;font-size:11px">▸</span>
+        <span style="font-weight:500">editor</span>
+        <span style="font:500 10px 'IBM Plex Sans',sans-serif;color:#8fb4e0;background:rgba(80,130,190,.16);border-radius:99px;padding:1px 7px">active</span>
+      </div>
+      <div style="margin-left:4px;border-left:1px solid #222932;padding-left:20px;display:flex;flex-direction:column">
+        <div style="display:flex;align-items:baseline;gap:12px;padding:4px 0">
+          <span style="color:#4a5561;font-size:10px">•</span>
+          <span style="font-weight:500;min-width:110px">nvim</span>
+          <span style="color:#7d8a97;flex:1">nvim src/main.rs</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;color:#5fd6a1"><span style="width:6px;height:6px;border-radius:50%;background:#34c98a"></span>3s ago</span>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:12px;padding:4px 0">
+          <span style="color:#4a5561;font-size:10px">•</span>
+          <span style="font-weight:500;min-width:110px">cargo-watch</span>
+          <span style="color:#7d8a97;flex:1">cargo watch -x check</span>
+          <span style="color:#94a1ae">41s ago</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:9px;padding:4px 0">
+        <span style="color:#7d8a97;font-size:11px">▸</span>
+        <span style="font-weight:500">agent</span>
+      </div>
+      <div style="margin-left:4px;border-left:1px solid #222932;padding-left:20px;display:flex;flex-direction:column">
+        <div style="display:flex;align-items:baseline;gap:12px;padding:4px 0">
+          <span style="color:#4a5561;font-size:10px">•</span>
+          <span style="font-weight:500;min-width:110px">claude</span>
+          <span style="color:#7d8a97;flex:1">claude</span>
+          <span style="color:#e3b558;background:rgba(227,181,88,.12);border-radius:6px;padding:1px 8px">quiet 12m</span>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:12px;padding:4px 0">
+          <span style="color:#4a5561;font-size:10px">•</span>
+          <span style="font-weight:500;min-width:110px">tail-logs</span>
+          <span style="color:#7d8a97;flex:1">tail -f target/debug.log</span>
+          <span style="color:#7d8a97;border:1px dashed #3a4550;border-radius:6px;padding:0 8px">Unknown</span>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:9px;padding:5px 0;margin-top:6px;color:#7d8a97">
+      <span style="font-size:11px">○</span>
+      <span style="font-weight:500">old-build</span>
+      <span style="font:500 10px 'IBM Plex Sans',sans-serif;color:#94a1ae;background:rgba(148,161,174,.12);border-radius:99px;padding:1px 7px">resurrectable</span>
+      <span style="font:400 11px 'IBM Plex Sans',sans-serif">died 5m ago</span>
+    </div>
+  </div>
+</div>
+</div>
+</div>
+
+<!-- ============ 1e: machines overview grid ============ -->
+<div class="dv-opt" id="1e">
+<div class="dv-olabel"><a class="dv-oid" href="#1e">1e</a>Machines overview as a card grid — the landing view (§5.2), alt to <a class="dv-oid" href="#1a">1a</a>'s rail</div>
+<div class="dv-card" style="width:1000px">
+<div style="background:#f5f7f9;padding:24px 28px 28px;display:flex;flex-direction:column;gap:18px" data-screen-label="1e machines grid">
+  <div style="display:flex;align-items:baseline;gap:12px">
+    <span style="font:600 17px 'IBM Plex Sans',sans-serif;color:#1c242e">Machines</span>
+    <span style="font:400 12px 'IBM Plex Sans',sans-serif;color:#8b98a5">3 reporting for this account</span>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+    <!-- card 1 -->
+    <div style="background:#ffffff;border:1px solid #e4e9ee;border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:12px;box-shadow:0 1px 2px rgba(16,24,32,.04)">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="width:8px;height:8px;border-radius:50%;background:#22b573"></span>
+        <span style="font:600 14px 'IBM Plex Mono',monospace;color:#1c242e">red-laptop</span>
+        <span style="margin-left:auto;font:500 10px 'IBM Plex Sans',sans-serif;color:#1f9d63;background:#e5f6ee;border-radius:99px;padding:2px 7px">live</span>
+      </div>
+      <div style="display:flex;gap:5px">
+        <span style="font:500 9.5px 'IBM Plex Sans',sans-serif;color:#4b6e93;background:#e8f0f9;border-radius:99px;padding:2px 7px">real hostname</span>
+        <span style="font:500 9.5px 'IBM Plex Sans',sans-serif;color:#1f9d63;background:#e5f6ee;border-radius:99px;padding:2px 7px">privacy: full</span>
+      </div>
+      <div style="display:flex;gap:16px;font:400 12px 'IBM Plex Sans',sans-serif;color:#61707e">
+        <span><b style="color:#1c242e;font-weight:600">3</b> sessions</span>
+        <span><b style="color:#1c242e;font-weight:600">3</b> tabs</span>
+        <span><b style="color:#1c242e;font-weight:600">6</b> panes</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font:400 11px 'IBM Plex Sans',sans-serif;color:#b3bec8;border-top:1px solid #f3f6f8;padding-top:10px">
+        <span>first seen Mar 12</span><span>last seen just now</span>
+      </div>
+    </div>
+    <!-- card 2 -->
+    <div style="background:#ffffff;border:1px solid #e4e9ee;border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:12px;box-shadow:0 1px 2px rgba(16,24,32,.04)">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="width:8px;height:8px;border-radius:50%;background:#22b573"></span>
+        <span style="font:600 14px 'IBM Plex Mono',monospace;color:#1c242e">buildbox</span>
+        <span style="margin-left:auto;font:500 10px 'IBM Plex Sans',sans-serif;color:#1f9d63;background:#e5f6ee;border-radius:99px;padding:2px 7px">live</span>
+      </div>
+      <div style="display:flex;gap:5px">
+        <span style="font:500 9.5px 'IBM Plex Sans',sans-serif;color:#7a6a9e;background:#efeaf8;border-radius:99px;padding:2px 7px">alias</span>
+        <span style="font:500 9.5px 'IBM Plex Sans',sans-serif;color:#1f9d63;background:#e5f6ee;border-radius:99px;padding:2px 7px">privacy: full</span>
+      </div>
+      <div style="display:flex;gap:16px;font:400 12px 'IBM Plex Sans',sans-serif;color:#61707e">
+        <span><b style="color:#1c242e;font-weight:600">1</b> session</span>
+        <span><b style="color:#1c242e;font-weight:600">2</b> tabs</span>
+        <span><b style="color:#1c242e;font-weight:600">3</b> panes</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font:400 11px 'IBM Plex Sans',sans-serif;color:#b3bec8;border-top:1px solid #f3f6f8;padding-top:10px">
+        <span>first seen May 2</span><span>last seen 4s ago</span>
+      </div>
+    </div>
+    <!-- card 3: hidden + stale -->
+    <div style="background:#fbfcfd;border:1px solid #e4e9ee;border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="width:8px;height:8px;border-radius:50%;background:#c8b47a"></span>
+        <span style="font:500 14px 'IBM Plex Mono',monospace;color:#8b98a5;font-style:italic">&lt;machine hidden&gt;</span>
+        <span style="margin-left:auto;font:500 10px 'IBM Plex Sans',sans-serif;color:#a1770a;background:#faf3df;border-radius:99px;padding:2px 7px">stale</span>
+      </div>
+      <div style="display:flex;gap:5px">
+        <span style="font:500 9.5px 'IBM Plex Sans',sans-serif;color:#8b98a5;background:#eef2f5;border-radius:99px;padding:2px 7px">hidden</span>
+        <span style="font:500 9.5px 'IBM Plex Sans',sans-serif;color:#a1770a;background:#faf3df;border-radius:99px;padding:2px 7px">privacy: restricted (all names)</span>
+      </div>
+      <div style="display:flex;gap:16px;font:400 12px 'IBM Plex Sans',sans-serif;color:#61707e">
+        <span><b style="color:#1c242e;font-weight:600">2</b> sessions</span>
+        <span><b style="color:#1c242e;font-weight:600">2</b> tabs</span>
+        <span><b style="color:#1c242e;font-weight:600">5</b> panes</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font:400 11px 'IBM Plex Sans',sans-serif;color:#b3bec8;border-top:1px solid #f3f6f8;padding-top:10px">
+        <span>first seen Jun 20</span><span style="color:#a1770a">last seen 42m ago</span>
+      </div>
+    </div>
+  </div>
+  <div style="font:400 11px 'IBM Plex Sans',sans-serif;color:#b3bec8">Counts are shown even under full redaction — structure leaks by design; the UI doesn't pretend otherwise.</div>
+</div>
+</div>
+</div>
+
+</div>
+<p class="dv-next">Try next: "commit to <a class="dv-oid" href="#1a">1a</a> and add the agent-quiet signal to the sidebar" · "merge <a class="dv-oid" href="#1e">1e</a>'s grid as landing with <a class="dv-oid" href="#1b">1b</a> as detail" · "show <a class="dv-oid" href="#1a">1a</a> fully redacted"</p>
+</section>
+
+</x-dc>
+</body>
+</html>

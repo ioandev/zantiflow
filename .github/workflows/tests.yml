@@ -1,0 +1,175 @@
+name: Tests
+
+# Reusable test suite (ADR-0014's unit / BDD / integration / Playwright layers). Called by:
+#   - ci.yml           → on PRs + feature-branch pushes (pre-merge validation)
+#   - docker-publish.yml → as the gate that must pass BEFORE any image is built/pushed
+# Keeping the jobs here (workflow_call) means there's exactly one definition of "the tests".
+on:
+  workflow_call:
+
+jobs:
+  # Toolchains that aren't scaffolded yet (Rust plugin, Python bots) should not fail CI.
+  # This job reports which language stacks exist so their jobs run only once present.
+  detect:
+    runs-on: ubuntu-latest
+    outputs:
+      rust: ${{ steps.f.outputs.rust }}
+      python: ${{ steps.f.outputs.python }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: f
+        shell: bash
+        run: |
+          if ls Cargo.toml apps/*/Cargo.toml >/dev/null 2>&1; then
+            echo "rust=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "rust=false" >> "$GITHUB_OUTPUT"
+          fi
+          if ls apps/*/pyproject.toml apps/*/requirements.txt packages/notify-protocol/pyproject.toml >/dev/null 2>&1; then
+            echo "python=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "python=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  # TS/JS lint + format — single Node version (results don't vary by version).
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm format:check
+
+  # TS/JS build + test across supported Node versions.
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm -r build
+      - run: pnpm -r test
+
+  # Web dashboard E2E (ADR-0014's Playwright layer). Drives the real Next.js frontend with the backend
+  # mocked at the browser network layer (login → dashboard tree → live SSE update → tokens → XSS-safe),
+  # so no DB/Google/backend is stood up — the backend keeps its own real-MariaDB integration tests.
+  web-e2e:
+    runs-on: ubuntu-latest
+    needs: [lint]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Install Playwright browser (+ OS deps)
+        run: pnpm --filter @zantiflow/web exec playwright install --with-deps chromium
+      - name: Build + run E2E
+        run: pnpm --filter @zantiflow/web run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            apps/web/playwright-report/
+            apps/web/test-results/
+          retention-days: 7
+
+  # Rust plugin (wasm32-wasip1). Runs once apps/plugin exists.
+  rust:
+    needs: detect
+    if: needs.detect.outputs.rust == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-wasip1
+          components: clippy, rustfmt
+      - run: cargo fmt --all --check
+      - run: cargo clippy --all-targets --all-features -- -D warnings
+      - run: cargo test --all
+
+  # Python bots (discord.py / aiogram). Runs once a bot app exists.
+  python:
+    needs: detect
+    if: needs.detect.outputs.python == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Lint + test the shared protocol + each bot
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip ruff pytest pytest-asyncio
+          # Shared protocol package first (the bots depend on it).
+          if [ -f packages/notify-protocol/pyproject.toml ]; then
+            pip install -e "packages/notify-protocol[dev]"
+            ruff check packages/notify-protocol
+            pytest packages/notify-protocol -q
+            # The real-socket / real-timing integration tests are gated out of the default run
+            # (pyproject addopts excludes `-m integration` to keep the unit suite fast), so run them
+            # explicitly here — CI must still exercise the end-to-end reconnect-backoff reproduction.
+            pytest packages/notify-protocol -m integration -q
+          fi
+          for d in apps/discord-bot apps/telegram-bot; do
+            [ -d "$d" ] || continue
+            echo "== $d =="
+            ruff check "$d"
+            [ -f "$d/requirements.txt" ] && pip install -r "$d/requirements.txt"
+            pytest "$d" -q
+          done
+
+  # Guard the committed third-party license manifests against drift (ADR-0036 Risk 2, decided in
+  # ADR-0046): regenerate them and fail if a committed file is stale — i.e. someone bumped a
+  # dependency but forgot `just license`. Only the byte-reproducible manifests are checked:
+  # apps/web/LICENSES (npm, from the frozen pnpm lockfile) and apps/plugin/LICENSES (Cargo, from the
+  # committed Cargo.lock). The root LICENSES is deliberately NOT diffed here — its PyPI section comes
+  # from the bots' venvs, whose requirements.txt use unpinned `>=` ranges, so regenerating it in CI
+  # would false-positive on any upstream bot-dependency release. Pinning the bot deps is the
+  # prerequisite to guarding the root manifest too (ADR-0046 follow-up).
+  license-drift:
+    needs: detect
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Regenerate web LICENSES (npm — frozen lockfile)
+        run: node scripts/generate-licenses.mjs --scope web --out apps/web/LICENSES
+      # The plugin scope needs the Cargo closure; set it up only once the plugin exists.
+      - name: Set up Rust (wasm32-wasip1) for the plugin closure
+        if: needs.detect.outputs.rust == 'true'
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-wasip1
+      - name: Regenerate plugin LICENSES (Cargo — committed Cargo.lock)
+        if: needs.detect.outputs.rust == 'true'
+        run: node scripts/generate-licenses.mjs --scope plugin --out apps/plugin/LICENSES
+      - name: Fail if a committed manifest is stale
+        run: |
+          if ! git diff --exit-code -- apps/web/LICENSES apps/plugin/LICENSES; then
+            echo "::error::A committed LICENSES manifest is stale — run \`just license\` and commit the result."
+            exit 1
+          fi

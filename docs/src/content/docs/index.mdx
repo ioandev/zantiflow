@@ -1,0 +1,54 @@
+---
+title: zantiflow
+description: Live Zellij session telemetry — a plugin, a multi-tenant backend, a PWA dashboard, and bots.
+template: splash
+hero:
+  tagline: A live view of every Zellij session on your machines — sessions → tabs → panes, updated once a second — with a ping when a pane needs your attention.
+  actions:
+    - text: Get started
+      link: /plugin/getting-started/
+      icon: right-arrow
+      variant: primary
+    - text: How it works
+      link: /overview/
+      icon: open-book
+    - text: GitHub
+      link: https://github.com/ioandev/zantiflow
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components'
+
+## What zantiflow is
+
+A **Zellij plugin** (Rust → WebAssembly) pushes a per-second snapshot of your sessions, tabs, and
+panes to a **multi-tenant backend**, which powers a **live PWA dashboard** and **notifications** when a
+pane needs you — for example, a Claude session waiting on input. **Privacy is applied in the plugin,
+before anything is sent.**
+
+<CardGrid stagger>
+  <Card title="Plugin" icon="seti:rust">
+    Runs inside Zellij, builds the snapshot, redacts locally, and POSTs to the backend.
+    [Getting started](/plugin/getting-started/)
+  </Card>
+  <Card title="Backend" icon="seti:typescript">
+    Multi-tenant Express + MariaDB; write-only ingest tokens in, read/management API out.
+    [Backend](/backend/)
+  </Card>
+  <Card title="Dashboard" icon="laptop">
+    Next.js PWA — machines live over SSE, token management, Web Push.
+    [Dashboard](/dashboard/)
+  </Card>
+  <Card title="Notifications & bots" icon="discord">
+    Discord + Telegram DMs for PRO, browser Web Push for everyone.
+    [Notifications & bots](/bots/)
+  </Card>
+</CardGrid>
+
+## Learn more
+
+- [Overview](/overview/) — the pieces and how they fit together.
+- [Privacy](/privacy/) — exactly what is and isn't sent.
+- [What ADRs are](/adrs/) — how decisions are recorded.
+- [Contributing](/contributing/) and [Donations](/donations/).

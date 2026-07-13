@@ -1,0 +1,37 @@
+---
+title: Privacy
+description: What leaves your machine, what never does, and how redaction works.
+---
+
+Privacy is a first-class design constraint, not an add-on. **Redaction happens in the plugin, before
+anything is sent** — the backend can only ever receive what you allowed.
+
+## What is sent (once per second)
+
+- A machine identity (`real` hostname, a custom `alias`, or `hidden`).
+- The session → tab → pane tree, with each node's name **or `null`** if you redacted it.
+- Per-pane activity **fingerprints** (a salted hash of a bounded slice of the pane, used only to detect
+  *change* — the content itself is never sent here).
+
+## What is never sent
+
+- Raw pane contents (except the separate, opt-in [output channel](#on-demand-pane-output) below).
+- Secrets — the output channel scrubs known secret shapes **in the plugin** before sending.
+- Any name you set to `hidden` — it transmits as `null` and the dashboard renders `<hidden>`.
+
+## Model A (fail-closed)
+
+A master `full` switch sets the baseline; per-field overrides win; **an invalid value fails closed**
+(redacts) and warns. So a typo can never *leak* more than you intended.
+
+## On-demand pane output
+
+Pane output is **OFF by default**. When you turn it on and click a pane in the dashboard, the site
+registers a request; the plugin's ~5-second poll captures the last ≤50 lines, **scrubs secrets**
+(ANSI-aware, ReDoS-safe patterns), and sends only that. The dashboard renders the ANSI safely (markup
+is escaped — output can never execute as HTML). Content otherwise never leaves your machine.
+
+## Retention
+
+History retention is **none** — the backend keeps only the latest snapshot per machine and the current
+attentions. Notifications are pruned after a few hours.

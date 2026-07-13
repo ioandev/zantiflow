@@ -1,0 +1,32 @@
+// Dev layout for the zantiflow plugin smoke check (ADR-0014 §6). Load it in a THROWAWAY Zellij
+// session ONLY — never touch a running session:
+//
+//   cargo build -p zantiflow-plugin --target wasm32-wasip1 --release
+//   zellij --session zantiflow-smoke --layout apps/plugin/dev/zantiflow-dev.kdl
+//   # grant the permission prompt in the plugin pane, then watch your test backend receive POSTs.
+//   # when done:  zellij delete-session zantiflow-smoke --force
+//
+// Point `server_url` at a local backend (Phase 1/2). Use a real ingest token, or omit `token` to
+// exercise device pairing. `file:` must be an ABSOLUTE path to the built .wasm.
+layout {
+    pane size=1 borderless=true {
+        plugin location="zellij:tab-bar"
+    }
+    pane {
+        plugin location="file:/repos/zantiflow/target/wasm32-wasip1/release/zantiflow_plugin.wasm" {
+            server_url "http://localhost:4000"
+            // token "ztf_replace_with_a_real_ingest_token"
+            full "true"
+            machine_name "alias:dev-box"
+            // hostname "on"   // opt-in (ADR-0024): send the REAL hostname; requires machine_name "real"
+            //                 // and triggers the RunCommands permission prompt. OFF by default.
+            // pane_output "on" // opt-in (ADR-0016): share a pane's last ~50 lines on demand. Enable it
+            //                  // to smoke-check COLOUR capture — the plugin then subscribes to
+            //                  // PaneRenderReportWithAnsi and delivers ANSI-coloured lines. OFF by default.
+            session_names "send"
+            tab_names "send"
+            pane_names "send"
+        }
+    }
+    pane
+}

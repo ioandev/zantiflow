@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+
+# Node / TypeScript build output
+dist/
+*.tsbuildinfo
+
+# Next.js (apps/web)
+.next/
+next-env.d.ts
+out/
+
+# Rust (plugin)
+target/
+
+# Python (bots, notify-protocol)
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.egg-info/
+.venv/
+venv/
+
+# Test / coverage output
+coverage/
+test-results/
+playwright-report/
+.playwright/
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# Logs / OS / editor
+*.log
+.DS_Store
+Thumbs.db
+*.swp
+
+# Astro/Starlight
+.astro/
+docs/dist/
+apps/web/.next-e2e

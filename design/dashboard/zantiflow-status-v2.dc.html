@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:"IBM Plex Sans",system-ui,sans-serif}
+a{color:#2f6fd0}a:hover{color:#1d5ab8}
+</style>
+</helmet>
+
+<div style="{{ vars }}">
+<div style="min-height:100vh;background:var(--bg,#f5f7f9);color:var(--tx,#1c242e)">
+
+  <!-- ============ top bar ============ -->
+  <div style="position:sticky;top:0;z-index:10;display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;padding:6px var(--padX,24px);min-height:40px;background:var(--surface,#ffffff);border-bottom:1px solid var(--border,#e4e9ee)">
+    <div style="display:flex;align-items:center;gap:9px">
+      <div style="width:22px;height:22px;border-radius:6px;background:var(--tx,#1c242e);color:#7be3ae;display:grid;place-items:center;font:600 12px 'IBM Plex Mono',monospace">z</div>
+      <div style="font:600 14px 'IBM Plex Mono',monospace;color:var(--tx,#1c242e);letter-spacing:.01em">zantiflow</div>
+    </div>
+    <div style="display:flex;gap:2px;margin-left:24px">
+      <div style="font:500 13px 'IBM Plex Sans',sans-serif;color:var(--tx,#1c242e);padding:6px 12px;border-radius:6px;background:var(--bluBg,#e8f0f9)">Machines</div>
+      <div style="font:500 13px 'IBM Plex Sans',sans-serif;color:var(--tx2,#61707e);padding:6px 12px;border-radius:6px;cursor:pointer" style-hover="background:var(--surface2,#fbfcfd)">Tokens</div>
+    </div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:14px">
+      <div onClick="{{ toggleTheme }}" style="display:flex;align-items:center;gap:7px;font:500 12px 'IBM Plex Sans',sans-serif;color:var(--tx2,#61707e);border:1px solid var(--border,#e4e9ee);border-radius:99px;padding:5px 12px;cursor:pointer;user-select:none" style-hover="border-color:var(--tx3,#8b98a5);color:var(--tx,#1c242e)">
+        <span style="font-size:13px;line-height:1">{{ themeIcon }}</span>{{ themeLabel }}
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="display:var(--emailDisp,block);font:400 12px 'IBM Plex Sans',sans-serif;color:var(--tx2,#61707e)">maya@gmail.com</div>
+        <div style="width:26px;height:26px;border-radius:50%;background:var(--bluBg,#d7e3f2);color:var(--blu,#2f6fd0);display:grid;place-items:center;font:600 11px 'IBM Plex Sans',sans-serif">M</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="max-width:1160px;margin:0 auto;padding:26px var(--padX,24px) 80px;display:flex;flex-direction:column;gap:30px">
+
+    <!-- ============ machines overview ============ -->
+    <div style="display:flex;flex-direction:column;gap:16px" data-screen-label="Machines overview">
+      <div style="display:flex;align-items:baseline;gap:12px">
+        <span style="font:600 17px 'IBM Plex Sans',sans-serif;color:var(--tx,#1c242e)">Machines</span>
+        <span style="font:400 12px 'IBM Plex Sans',sans-serif;color:var(--tx3,#8b98a5)">3 reporting for this account</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px">
+
+        <!-- card: red-laptop -->
+        <div onClick="{{ goTo.redLaptop }}" style="background:var(--surface,#ffffff);border:1px solid var(--border,#e4e9ee);border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:12px;box-shadow:0 1px 2px rgba(16,24,32,.04);cursor:pointer" style-hover="border-color:var(--tx3,#8b98a5)">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="width:8px;height:8px;border-radius:50%;background:var(--grnDot,#22b573);flex:none"></span>
+            <span style="font:600 14px 'IBM Plex Mono',monospace;color:var(--tx,#1c242e)">red-laptop</span>
+            <span style="margin-left:auto;font:500 10px 'IBM Plex Sans',sans-serif;color:var(--grn,#1f9d63);background:var(--grnBg,#e5f6ee);border-radius:99px;padding:2px 7px">live</span>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:5px">
+            <span style="font:500 9.5px 'IBM Plex Sans',sans-serif;color:var(--blu,#4b6e93);background:var(--bluBg,#e8f0f9);border-radius:99px;padding:2px 7px">real hostname</span>
+            <span style="font:500 9.5px 'IBM Plex Sans',sans-serif;color:var(--grn,#1f9d63);background:var(--grnBg,#e5f6ee);border-radius:99px;padding:2px 7px">privacy: full</span>
+            <span style="font:500 9.5px 'IBM Plex Sans',sans-serif;color:var(--att,#c2410c);background:var(--attBg,#feeadd);border-radius:99px;padding:2px 7px">1 needs attention</span>
+          </div>
+          <div style="display:flex;gap:16px;font:400 12px 'IBM Plex Sans',sans-serif;color:var(--tx2,#61707e)">
+            <span><b style="color:var(--tx,#1c242e);font-weight:600">3</b> sessions</span>
+            <span><b style="color:var(--tx,#1c242e);font-weight:600">3</b> tabs</span>
+            <span><b style="color:var(--tx,#1c242e);font-weight:600">6</b> panes</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font:400 11px 'IBM Plex Sans',sans-serif;color:var(--faint,#b3bec8);border-top:1px solid var(--border2,#f3f6f8);padding-top:10px">
+            <span>first seen Mar 12</span><span>last seen just now</span>
+          </div>
+        </div>
+
+        <!-- card: buildbox -->
+        <div onClick="{{ goTo.buildbox }}" style="background:var(--surface,#ffffff);border:1px solid var(--border,#e4e9ee);border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:12px;box-shadow:0 1px 2px rgba(16,24,32,.04);cursor:pointer" style-hover="border-color:var(--tx3,#8b98a5)">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="width:8px;height:8px;border-radius:50%;background:var(--grnDot,#22b573);flex:none"></span>
+            <span style="font:600 14px 'IBM Plex Mono',monospace;color:var(--tx,#1c242e)">buildbox</span>
+            <span style="margin-left:auto;font:500 10px 'IBM Plex Sans',sans-serif;color:var(--grn,#1f9d63);background:var(--grnBg,#e5f6ee);border-radius:99px;padding:2px 7px">live</span>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:5px">
+            <span style="font:500 9.5px 'IBM Plex Sans',sans-serif;color:var(--alias,#7a6a9e);background:var(--aliasBg,#efeaf8);border-radius:99px;padding:2px 7px">alias</span>
+            <span style="font:500 9.5px 'IBM Plex Sans',sans-serif;color:var(--grn,#1f9d63);background:var(--grnBg,#e5f6ee);border-radius:99px;padding:2px 7px">privacy: full</span>
+          </div>
+          <div style="display:flex;gap:16px;font:400 12px 'IBM Plex Sans',sans-serif;color:var(--tx2,#61707e)">
+            <span><b style="color:var(--tx,#1c242e);font-weight:600">1</b> session</span>
+            <span><b style="color:var(--tx,#1c242e);font-weight:600">2</b> tabs</span>
+            <span><b style="color:var(--tx,#1c242e);font-weight:600">3</b> panes</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font:400 11px 'IBM Plex Sans',sans-serif;color:var(--faint,#b3bec8);border-top:1px solid var(--border2,#f3f6f8);padding-top:10px">
+            <span>first seen May 2</span><span>last seen 4s ago</span>
+          </div>
+        </div>
+
+        <!-- card: hidden machine -->
+        <sc-if value="{{ showStale }}" hint-placeholder-val="{{ true }}">
+        <div onClick="{{ goTo.hidden }}" style="background:var(--surface2,#fbfcfd);border:1px solid var(--border,#e4e9ee);border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:12px;cursor:pointer" style-hover="border-color:var(--tx3,#8b98a5)">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="width:8px;height:8px;border-radius:50%;background:var(--ambDot,#c8b47a);flex:none"></span>
+            <span style="font:500 14px 'IBM Plex Mono',monospace;color:var(--tx3,#8b98a5);font-style:italic">&lt;machine hidden&gt;</span>
+            <span style="margin-left:auto;font:500 10px 'IBM Plex Sans',sans-serif;color:var(--amb,#a1770a);background:var(--ambBg,#faf3df);border-radius:99px;padding:2px 7px">stale</span>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:5px">
+            <span style="font:500 9.5px 'IBM Plex Sans',sans-serif;color:var(--tx3,#8b98a5);background:var(--border2,#eef2f5);border-radius:99px;padding:2px 7px">hidden</span>
+            <span style="font:500 9.5px 'IBM Plex Sans',sans-serif;color:var(--amb,#a1770a);background:var(--ambBg,#faf3df);border-radius:99px;padding:2px 7px">privacy: restricted (all names)</span>
+          </div>
+          <div style="display:flex;gap:16px;font:400 12px 'IBM Plex Sans',sans-serif;color:var(--tx2,#61707e)">
+            <span><b style="color:var(--tx,#1c242e);font-weight:600">2</b> sessions</span>
+            <span><b style="color:var(--tx,#1c242e);font-weight:600">2</b> tabs</span>
+            <span><b style="color:var(--tx,#1c242e);font-weight:600">4</b> panes</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font:400 11px 'IBM Plex Sans',sans-serif;color:var(--faint,#b3bec8);border-top:1px solid var(--border2,#f3f6f8);padding-top:10px">
+            <span>first seen Jun 20</span><span style="color:var(--amb,#a1770a)">last seen 42m ago</span>
+          </div>
+        </div>
+        </sc-if>
+      </div>
+      <div style="font:400 11px 'IBM Plex Sans',sans-serif;color:var(--faint,#b3bec8)">Counts are shown even under full redaction — structure leaks by design. Click a machine to jump to its detail. Click a pane to see its last 50 lines.</div>
+    </div>
+
+    <!-- ============ detail: red-laptop ============ -->
+    <div id="m-red-laptop" style="display:flex;flex-direction:column;gap:14px;scroll-margin-top:70px" data-screen-label="Detail red-laptop">
+      <div style="display:flex;flex-direction:column;gap:6px;padding-top:8px;border-top:1px solid var(--border,#e4e9ee)">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;padding-top:8px">
+          <span style="width:9px;height:9px;border-radius:50%;background:var(--grnDot,#22b573)"></span>
+          <span style="font:600 18px 'IBM Plex Mono',monospace;color:var(--tx,#1c242e)">red-laptop</span>
+          <span style="font:500 10.5px 'IBM Plex Sans',sans-serif;color:var(--blu,#4b6e93);background:var(--bluBg,#e8f0f9);border-radius:99px;padding:2px 8px">real hostname</span>
+          <span style="font:500 10.5px 'IBM Plex Sans',sans-serif;color:var(--grn,#1f9d63);background:var(--grnBg,#e5f6ee);border-radius:99px;padding:2px 8px">privacy: full</span>
+          <span style="margin-left:auto;font:400 12px 'IBM Plex Sans',sans-serif;color:var(--tx2,#61707e)">updated 1s ago</span>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px 18px;font:400 11.5px 'IBM Plex Sans',sans-serif;color:var(--tx3,#8b98a5);padding-left:19px">
+          <span>first seen Mar 12, 2026</span><span>last seen just now</span><span style="font-family:'IBM Plex Mono',monospace">m_9f3c1a70</span>
+        </div>
+      </div>
+
+      <!-- session: main -->
+      <div style="background:var(--surface,#ffffff);border:1px solid var(--border,#e4e9ee);border-radius:12px;overflow:hidden;box-shadow:0 1px 2px rgba(16,24,32,.04)">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:12px 18px;border-bottom:1px solid var(--border2,#f3f6f8);background:var(--surface2,#fbfcfd)">
+          <span style="width:8px;height:8px;border-radius:50%;background:var(--grnDot,#22b573)"></span>
+          <span style="font:600 14px 'IBM Plex Sans',sans-serif;color:var(--tx,#1c242e)">main</span>
+          <span style="font:500 10px 'IBM Plex Sans',sans-serif;color:var(--blu,#2f6fd0);background:var(--bluBg,#e8f0f9);border-radius:99px;padding:2px 8px">current</span>
+          <span style="font:500 10px 'IBM Plex Sans',sans-serif;color:var(--grn,#1f9d63);background:var(--grnBg,#e5f6ee);border-radius:99px;padding:2px 8px">live</span>
+          <span style="font:500 10px 'IBM Plex Sans',sans-serif;color:var(--att,#c2410c);background:var(--attBg,#feeadd);border-radius:99px;padding:2px 8px">1 needs attention</span>
+          <span style="margin-left:auto;font:400 11.5px 'IBM Plex Sans',sans-serif;color:var(--tx3,#8b98a5)">2 tabs · 4 panes</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;padding:12px 14px">
+
+          <!-- tab group: editor -->
+          <div style="border:1px solid var(--border2,#f3f6f8);border-radius:10px;overflow:hidden">
+            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:5px 8px;padding:8px 16px;background:var(--surface2,#fbfcfd);border-bottom:1px solid var(--border2,#f3f6f8)">
+              <span style="font:400 11px 'IBM Plex Mono',monospace;color:var(--faint,#b3bec8)">tab</span>
+              <span style="font:600 12px 'IBM Plex Sans',sans-serif;color:var(--tx,#1c242e)">editor</span>
+              <span style="font:500 9.5px 'IBM Plex Sans',sans-serif;color:var(--blu,#2f6fd0);background:var(--bluBg,#e8f0f9);border-radius:99px;padding:1px 6px">active</span>
+              <span style="margin-left:auto;font:400 11px 'IBM Plex Sans',sans-serif;color:var(--faint,#b3bec8)">2 panes</span>
+            </div>
+            <div style="display:flex;flex-direction:column">
+              <!-- pane: nvim -->
+              <div style="display:flex;flex-direction:column;border-bottom:1px solid var(--border2,#f3f6f8)">
+                <div onClick="{{ toggle.nvim }}" style="display:grid;grid-template-columns:var(--rowCols,160px minmax(0,1fr) 200px 130px);grid-template-areas:var(--rowAreas,'name cmd flags time');row-gap:4px;align-items:center;column-gap:14px;padding:9px 16px;cursor:pointer" style-hover="background:var(--surface2,#fbfcfd)">
+                  <span style="grid-area:name;font:500 13px 'IBM Plex Mono',monospace;color:var(--tx,#1c242e)">nvim</span>
+                  <span style="grid-area:cmd;font:400 12.5px 'IBM Plex Mono',monospace;color:var(--tx3,#8b98a5);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">nvim src/main.rs</span>
+                  <span style="grid-area:flags;display:flex;gap:4px"><span style="font:500 10px 'IBM Plex Sans',sans-serif;color:var(--blu,#2f6fd0);background:var(--bluBg,#e8f0f9);border-radius:99px;padding:2px 8px">focused</span></span>
+                  <span style="display:inline-flex;align-items:center;gap:6px;font:500 12px 'IBM Plex Sans',sans-serif;color:var(--grn,#1f9d63);grid-area:time;justify-self:end"><span style="width:6px;height:6px;border-radius:50%;background:var(--grnDot,#22b573)"></span>3s ago</span>
+                </div>
+                <sc-if value="{{ open.nvim }}" hint-placeholder-val="{{ false }}">
+                  <div style="margin:0 16px 12px;background:#0d1117;border:1px solid #1f2730;border-radius:8px;overflow:hidden">
+                    <div style="display:flex;align-items:center;gap:10px;padding:6px 12px;border-bottom:1px solid #1f2730;font:500 10.5px 'IBM Plex Sans',sans-serif;color:#7d8a97"><span>pane output — last 50 lines</span><span style="margin-left:auto">captured 3s ago · click row to close</span></div>
+                    <div style="padding:10px 14px;font:400 11.5px/1.65 'IBM Plex Mono',monospace;color:#c9d1d9;max-height:240px;overflow:auto">
+                      <div style="color:#4a5561">… 42 earlier lines</div>
+                      <div>fn accept_snapshot(&amp;mut self, snap: WireV3) -&gt; Result&lt;()&gt; {</div>
+                      <div>    self.stamp_last_updated(&amp;snap);</div>
+                      <div>    self.echo_privacy(&amp;snap.privacy);</div>
+                      <div>    self.store.put_latest(snap.machine_id, snap)?;</div>
+                      <div>    Ok(())</div>
+                      <div>}</div>
+                      <div style="color:#7ee2a8">-- INSERT --</div>
+                      <div style="color:#7d8a97">src/main.rs  142:27  utf-8  rust</div>
+                    </div>
+                  </div>
+                </sc-if>
+              </div>
+              <!-- pane: cargo-watch -->
+              <div style="display:flex;flex-direction:column">
+                <div onClick="{{ toggle.cargo }}" style="display:grid;grid-template-columns:var(--rowCols,160px minmax(0,1fr) 200px 130px);grid-template-areas:var(--rowAreas,'name cmd flags time');row-gap:4px;align-items:center;column-gap:14px;padding:9px 16px;cursor:pointer" style-hover="background:var(--surface2,#fbfcfd)">
+                  <span style="grid-area:name;font:500 13px 'IBM Plex Mono',monospace;color:var(--tx,#1c242e)">cargo-watch</span>
+                  <span style="grid-area:cmd;font:400 12.5px 'IBM Plex Mono',monospace;color:var(--tx3,#8b98a5);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">cargo watch -x check</span>
+                  <span style="grid-area:flags"></span>
+                  <span style="font:400 12px 'IBM Plex Sans',sans-serif;color:var(--tx2,#61707e);grid-area:time;justify-self:end">41s ago</span>
+                </div>
+                <sc-if value="{{ open.cargo }}" hint-placeholder-val="{{ false }}">
+                  <div style="margin:0 16px 12px;background:#0d1117;border:1px solid #1f2730;border-radius:8px;overflow:hidden">
+                    <div style="display:flex;align-items:center;gap:10px;padding:6px 12px;border-bottom:1px solid #1f2730;font:500 10.5px 'IBM Plex Sans',sans-serif;color:#7d8a97"><span>pane output — last 50 lines</span><span style="margin-left:auto">captured 41s ago · click row to close</span></div>
+                    <div style="padding:10px 14px;font:400 11.5px/1.65 'IBM Plex Mono',monospace;color:#c9d1d9;max-height:240px;overflow:auto">
+                      <div style="color:#4a5561">… 43 earlier lines</div>
+                      <div>[Running 'cargo check']</div>
+                      <div>    Checking zantiflow-backend v0.4.1</div>
+                      <div style="color:#e3b558">warning: unused variable `tick`</div>
+                      <div style="color:#7d8a97">  --&gt; src/ingest/mod.rs:88:13</div>
+                      <div style="color:#7ee2a8">    Finished dev [unoptimized + debuginfo] in 2.31s</div>
+                      <div>[Waiting for changes...]</div>
+                    </div>
+                  </div>
+                </sc-if>
+              </div>
+            </div>
+          </div>
+
+          <!-- tab group: agent -->
+          <div style="border:1px solid var(--border2,#f3f6f8);border-radius:10px;overflow:hidden">
+            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:5px 8px;padding:8px 16px;background:var(--surface2,#fbfcfd);border-bottom:1px solid var(--border2,#f3f6f8)">
+              <span style="font:400 11px 'IBM Plex Mono',monospace;color:var(--faint,#b3bec8)">tab</span>
+              <span style="font:600 12px 'IBM Plex Sans',sans-serif;color:var(--tx,#1c242e)">agent</span>
+              <span style="margin-left:auto;font:400 11px 'IBM Plex Sans',sans-serif;color:var(--faint,#b3bec8)">2 panes</span>
+            </div>
+            <div style="display:flex;flex-direction:column">
+              <!-- pane: claude -->
+              <div style="display:flex;flex-direction:column;border-bottom:1px solid var(--border2,#f3f6f8)">
+                <div onClick="{{ toggle.claude }}" style="display:grid;grid-template-columns:var(--rowCols,160px minmax(0,1fr) 200px 130px);grid-template-areas:var(--rowAreas,'name cmd flags time');row-gap:4px;align-items:center;column-gap:14px;padding:9px 16px;cursor:pointer" style-hover="background:var(--surface2,#fbfcfd)">
+                  <span style="grid-area:name;font:500 13px 'IBM Plex Mono',monospace;color:var(--tx,#1c242e)">claude</span>
+                  <span style="grid-area:cmd;font:400 12.5px 'IBM Plex Mono',monospace;color:var(--tx3,#8b98a5)">claude</span>
+                  <span style="grid-area:flags;display:flex;gap:4px"><span style="font:500 10px 'IBM Plex Sans',sans-serif;color:var(--att,#c2410c);background:var(--attBg,#feeadd);border-radius:99px;padding:2px 8px">needs attention</span></span>
+                  <span style="font:500 12px 'IBM Plex Sans',sans-serif;color:var(--amb,#a1770a);background:var(--ambBg,#faf3df);border-radius:6px;padding:2px 9px;grid-area:time;justify-self:end">quiet 12m</span>
+                </div>
+                <sc-if value="{{ open.claude }}" hint-placeholder-val="{{ false }}">
+                  <div style="margin:0 16px 12px;background:#0d1117;border:1px solid #1f2730;border-radius:8px;overflow:hidden">
+                    <div style="display:flex;align-items:center;gap:10px;padding:6px 12px;border-bottom:1px solid #1f2730;font:500 10.5px 'IBM Plex Sans',sans-serif;color:#7d8a97"><span>pane output — last 50 lines</span><span style="margin-left:auto">captured 12m ago · click row to close</span></div>
+                    <div style="padding:10px 14px;font:400 11.5px/1.65 'IBM Plex Mono',monospace;color:#c9d1d9;max-height:240px;overflow:auto">
+                      <div style="color:#4a5561">… 39 earlier lines</div>
+                      <div style="color:#b39ddb">✻ Reading src/ingest/handler.rs…</div>
+                      <div>⏺ Edited src/ingest/handler.rs (+22 −6)</div>
+                      <div>⏺ Running cargo test --workspace…</div>
+                      <div style="color:#7d8a97">   test ingest::dedup_fingerprint ... ok</div>
+                      <div style="color:#7d8a97">   test ingest::privacy_echo ... ok</div>
+                      <div style="color:#7ee2a8">   test result: ok. 47 passed; 0 failed</div>
+                      <div>⏺ All 3 tasks complete.</div>
+                      <div style="color:#e3b558">✻ Idle — waiting for your input (12m)</div>
+                    </div>
+                  </div>
+                </sc-if>
+              </div>
+              <!-- pane: tail-logs -->
+              <div style="display:flex;flex-direction:column">
+                <div onClick="{{ toggle.tail }}" style="display:grid;grid-template-columns:var(--rowCols,160px minmax(0,1fr) 200px 130px);grid-template-areas:var(--rowAreas,'name cmd flags time');row-gap:4px;align-items:center;column-gap:14px;padding:9px 16px;cursor:pointer" style-hover="background:var(--surface2,#fbfcfd)">
+                  <span style="grid-area:name;font:500 13px 'IBM Plex Mono',monospace;color:var(--tx,#1c242e)">tail-logs</span>
+                  <span style="grid-area:cmd;font:400 12.5px 'IBM Plex Mono',monospace;color:var(--tx3,#8b98a5);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">tail -f target/debug.log</span>
+                  <span style="grid-area:flags"></span>
+                  <span style="font:400 12px 'IBM Plex Sans',sans-serif;color:var(--tx3,#8b98a5);border:1px dashed var(--border,#cfd9e2);border-radius:6px;padding:1px 9px;grid-area:time;justify-self:end">Unknown</span>
+                </div>
+                <sc-if value="{{ open.tail }}" hint-placeholder-val="{{ false }}">
+                  <div style="margin:0 16px 12px;background:#0d1117;border:1px solid #1f2730;border-radius:8px;overflow:hidden">
+                    <div style="display:flex;align-items:center;gap:10px;padding:6px 12px;border-bottom:1px solid #1f2730;font:500 10.5px 'IBM Plex Sans',sans-serif;color:#7d8a97"><span>pane output — last 50 lines</span><span style="margin-left:auto">no change observed yet · click row to close</span></div>
+                    <div style="padding:10px 14px;font:400 11.5px/1.65 'IBM Plex Mono',monospace;color:#c9d1d9;max-height:240px;overflow:auto">
+                      <div style="color:#4a5561">… 44 earlier lines</div>
+                      <div style="color:#7d8a97">2026-07-10T18:29:03Z INFO ingest accepted machine=m_9f3c1a70</div>
+                      <div style="color:#7d8a97">2026-07-10T18:29:04Z INFO ingest accepted machine=m_2b81d4e5</div>
+                      <div style="color:#7d8a97">2026-07-10T18:29:04Z DEBUG dedup fingerprint unchanged sid=s_11 pane=7</div>
+                      <div style="color:#7d8a97">2026-07-10T18:29:05Z INFO ingest accepted machine=m_9f3c1a70</div>
+                    </div>
+                  </div>
+                </sc-if>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- session: scratch -->
+      <div style="background:var(--surface,#ffffff);border:1px solid var(--border,#e4e9ee);border-radius:12px;overflow:hidden;box-shadow:0 1px 2px rgba(16,24,32,.04)">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:12px 18px;border-bottom:1px solid var(--border2,#f3f6f8);background:var(--surface2,#fbfcfd)">
+          <span style="width:8px;height:8px;border-radius:50%;background:var(--grnDot,#22b573)"></span>
+          <span style="font:600 14px 'IBM Plex Sans',sans-serif;color:var(--tx,#1c242e)">scratch</span>
+          <span style="font:500 10px 'IBM Plex Sans',sans-serif;color:var(--grn,#1f9d63);background:var(--grnBg,#e5f6ee);border-radius:99px;padding:2px 8px">live</span>
+          <span style="margin-left:auto;font:400 11.5px 'IBM Plex Sans',sans-serif;color:var(--tx3,#8b98a5)">1 tab · 2 panes</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;padding:12px 14px">
+          <div style="border:1px solid var(--border2,#f3f6f8);border-radius:10px;overflow:hidden">
+            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:5px 8px;padding:8px 16px;background:var(--surface2,#fbfcfd);border-bottom:1px solid var(--border2,#f3f6f8)">
+              <span style="font:400 11px 'IBM Plex Mono',monospace;color:var(--faint,#b3bec8)">tab</span>
+              <span style="font:600 12px 'IBM Plex Sans',sans-serif;color:var(--tx,#1c242e)">shell</span>
+              <span style="font:500 9.5px 'IBM Plex Sans',sans-serif;color:var(--blu,#2f6fd0);background:var(--bluBg,#e8f0f9);border-radius:99px;padding:1px 6px">active</span>
+              <span style="margin-left:auto;font:400 11px 'IBM Plex Sans',sans-serif;color:var(--faint,#b3bec8)">2 panes</span>
+            </div>
+            <div style="display:flex;flex-direction:column">
+              <!-- pane: zsh -->
+              <div style="display:flex;flex-direction:column;border-bottom:1px solid var(--border2,#f3f6f8)">
+                <div onClick="{{ toggle.zsh }}" style="display:grid;grid-template-columns:var(--rowCols,160px minmax(0,1fr) 200px 130px);grid-template-areas:var(--rowAreas,'name cmd flags time');row-gap:4px;align-items:center;column-gap:14px;padding:9px 16px;cursor:pointer" style-hover="background:var(--surface2,#fbfcfd)">
+                  <span style="grid-area:name;font:500 13px 'IBM Plex Mono',monospace;color:var(--tx,#1c242e)">zsh</span>
+                  <span style="grid-area:cmd;font:400 12.5px 'IBM Plex Mono',monospace;color:var(--tx3,#8b98a5)">zsh</span>
+                  <span style="grid-area:flags;display:flex;gap:4px"><span style="font:500 10px 'IBM Plex Sans',sans-serif;color:var(--blu,#2f6fd0);background:var(--bluBg,#e8f0f9);border-radius:99px;padding:2px 8px">focused</span></span>
+                  <span style="font:400 12px 'IBM Plex Sans',sans-serif;color:var(--tx2,#61707e);grid-area:time;justify-self:end">2m ago</span>
+                </div>
+                <sc-if value="{{ open.zsh }}" hint-placeholder-val="{{ false }}">
+                  <div style="margin:0 16px 12px;background:#0d1117;border:1px solid #1f2730;border-radius:8px;overflow:hidden">
+                    <div style="display:flex;align-items:center;gap:10px;padding:6px 12px;border-bottom:1px solid #1f2730;font:500 10.5px 'IBM Plex Sans',sans-serif;color:#7d8a97"><span>pane output — last 50 lines</span><span style="margin-left:auto">captured 2m ago · click row to close</span></div>
+                    <div style="padding:10px 14px;font:400 11.5px/1.65 'IBM Plex Mono',monospace;color:#c9d1d9;max-height:240px;overflow:auto">
+                      <div style="color:#4a5561">… 46 earlier lines</div>
+                      <div><span style="color:#7ee2a8">➜ zantiflow</span> git status</div>
+                      <div style="color:#7d8a97">On branch main · nothing to commit, working tree clean</div>
+                      <div><span style="color:#7ee2a8">➜ zantiflow</span> _</div>
+                    </div>
+                  </div>
+                </sc-if>
+              </div>
+              <!-- pane: ssh-prod (exited) -->
+              <div style="display:flex;flex-direction:column">
+                <div onClick="{{ toggle.ssh }}" style="display:grid;grid-template-columns:var(--rowCols,160px minmax(0,1fr) 200px 130px);grid-template-areas:var(--rowAreas,'name cmd flags time');row-gap:4px;align-items:center;column-gap:14px;padding:9px 16px;cursor:pointer" style-hover="background:var(--surface2,#fbfcfd)">
+                  <span style="grid-area:name;font:500 13px 'IBM Plex Mono',monospace;color:var(--tx3,#8b98a5);text-decoration:line-through;text-decoration-color:var(--border,#cfd9e2)">ssh-prod</span>
+                  <span style="grid-area:cmd;font:400 12.5px 'IBM Plex Mono',monospace;color:var(--faint,#b3bec8)">ssh deploy@prod-1</span>
+                  <span style="grid-area:flags;display:flex;gap:4px"><span style="font:500 10px 'IBM Plex Sans',sans-serif;color:var(--red,#8b6d6d);background:var(--redBg,#f6ecec);border-radius:99px;padding:2px 8px">exited</span></span>
+                  <span style="font:400 12px 'IBM Plex Sans',sans-serif;color:var(--tx3,#8b98a5);grid-area:time;justify-self:end">1h ago</span>
+                </div>
+                <sc-if value="{{ open.ssh }}" hint-placeholder-val="{{ false }}">
+                  <div style="margin:0 16px 12px;background:#0d1117;border:1px solid #1f2730;border-radius:8px;overflow:hidden">
+                    <div style="display:flex;align-items:center;gap:10px;padding:6px 12px;border-bottom:1px solid #1f2730;font:500 10.5px 'IBM Plex Sans',sans-serif;color:#7d8a97"><span>pane output — last 50 lines</span><span style="margin-left:auto">captured 1h ago · click row to close</span></div>
+                    <div style="padding:10px 14px;font:400 11.5px/1.65 'IBM Plex Mono',monospace;color:#c9d1d9;max-height:240px;overflow:auto">
+                      <div style="color:#4a5561">… 47 earlier lines</div>
+                      <div style="color:#7d8a97">Connection to prod-1 closed.</div>
+                      <div style="color:#e3b558">[Process exited 0]</div>
+                    </div>
+                  </div>
+                </sc-if>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- dead session leaf -->
+      <div style="background:var(--surface2,#fbfcfd);border:1px dashed var(--border,#d5dde4);border-radius:12px;display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:12px 18px;color:var(--tx3,#8b98a5)">
+        <span style="width:8px;height:8px;border-radius:50%;border:1.5px solid var(--faint,#b3bec8);background:transparent"></span>
+        <span style="font:500 14px 'IBM Plex Sans',sans-serif;color:var(--tx2,#61707e)">old-build</span>
+        <span style="font:500 10px 'IBM Plex Sans',sans-serif;color:var(--tx2,#61707e);background:var(--border2,#eef2f5);border-radius:99px;padding:2px 8px">resurrectable</span>
+        <span style="font:400 11.5px 'IBM Plex Sans',sans-serif">died 5m ago</span>
+        <span style="margin-left:auto;font:400 11px 'IBM Plex Sans',sans-serif;color:var(--faint,#b3bec8)">no tab/pane detail for dead sessions</span>
+      </div>
+    </div>
+
+    <!-- ============ detail: buildbox ============ -->
+    <div id="m-buildbox" style="display:flex;flex-direction:column;gap:14px;scroll-margin-top:70px" data-screen-label="Detail buildbox">
+      <div style="display:flex;flex-direction:column;gap:6px;padding-top:8px;border-top:1px solid var(--border,#e4e9ee)">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;padding-top:8px">
+          <span style="width:9px;height:9px;border-radius:50%;background:var(--grnDot,#22b573)"></span>
+          <span style="font:600 18px 'IBM Plex Mono',monospace;color:var(--tx,#1c242e)">buildbox</span>
+          <span style="font:500 10.5px 'IBM Plex Sans',sans-serif;color:var(--alias,#7a6a9e);background:var(--aliasBg,#efeaf8);border-radius:99px;padding:2px 8px">alias</span>
+          <span style="font:500 10.5px 'IBM Plex Sans',sans-serif;color:var(--grn,#1f9d63);background:var(--grnBg,#e5f6ee);border-radius:99px;padding:2px 8px">privacy: full</span>
+          <span style="margin-left:auto;font:400 12px 'IBM Plex Sans',sans-serif;color:var(--tx2,#61707e)">updated 4s ago</span>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px 18px;font:400 11.5px 'IBM Plex Sans',sans-serif;color:var(--tx3,#8b98a5);padding-left:19px">
+          <span>first seen May 2, 2026</span><span>last seen 4s ago</span><span style="font-family:'IBM Plex Mono',monospace">m_2b81d4e5</span>
+        </div>
+      </div>
+
+      <div style="background:var(--surface,#ffffff);border:1px solid var(--border,#e4e9ee);border-radius:12px;overflow:hidden;box-shadow:0 1px 2px rgba(16,24,32,.04)">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:12px 18px;border-bottom:1px solid var(--border2,#f3f6f8);background:var(--surface2,#fbfcfd)">
+          <span style="width:8px;height:8px;border-radius:50%;background:var(--grnDot,#22b573)"></span>
+          <span style="font:600 14px 'IBM Plex Sans',sans-serif;color:var(--tx,#1c242e)">ci</span>
+          <span style="font:500 10px 'IBM Plex Sans',sans-serif;color:var(--blu,#2f6fd0);background:var(--bluBg,#e8f0f9);border-radius:99px;padding:2px 8px">current</span>
+          <span style="font:500 10px 'IBM Plex Sans',sans-serif;color:var(--grn,#1f9d63);background:var(--grnBg,#e5f6ee);border-radius:99px;padding:2px 8px">live</span>
+          <span style="margin-left:auto;font:400 11.5px 'IBM Plex Sans',sans-serif;color:var(--tx3,#8b98a5)">2 tabs · 3 panes</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;padding:12px 14px">
+          <!-- tab: build -->
+          <div style="border:1px solid var(--border2,#f3f6f8);border-radius:10px;overflow:hidden">
+            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:5px 8px;padding:8px 16px;background:var(--surface2,#fbfcfd);border-bottom:1px solid var(--border2,#f3f6f8)">
+              <span style="font:400 11px 'IBM Plex Mono',monospace;color:var(--faint,#b3bec8)">tab</span>
+              <span style="font:600 12px 'IBM Plex Sans',sans-serif;color:var(--tx,#1c242e)">build</span>
+              <span style="font:500 9.5px 'IBM Plex Sans',sans-serif;color:var(--blu,#2f6fd0);background:var(--bluBg,#e8f0f9);border-radius:99px;padding:1px 6px">active</span>
+              <span style="margin-left:auto;font:400 11px 'IBM Plex Sans',sans-serif;color:var(--faint,#b3bec8)">1 pane</span>
+            </div>
+            <div style="display:flex;flex-direction:column">
+              <div style="display:flex;flex-direction:column">
+                <div onClick="{{ toggle.bazel }}" style="display:grid;grid-template-columns:var(--rowCols,160px minmax(0,1fr) 200px 130px);grid-template-areas:var(--rowAreas,'name cmd flags time');row-gap:4px;align-items:center;column-gap:14px;padding:9px 16px;cursor:pointer" style-hover="background:var(--surface2,#fbfcfd)">
+                  <span style="grid-area:name;font:500 13px 'IBM Plex Mono',monospace;color:var(--tx,#1c242e)">bazel</span>
+                  <span style="grid-area:cmd;font:400 12.5px 'IBM Plex Mono',monospace;color:var(--tx3,#8b98a5);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">bazel build //services/...</span>
+                  <span style="grid-area:flags;display:flex;gap:4px"><span style="font:500 10px 'IBM Plex Sans',sans-serif;color:var(--blu,#2f6fd0);background:var(--bluBg,#e8f0f9);border-radius:99px;padding:2px 8px">focused</span></span>
+                  <span style="display:inline-flex;align-items:center;gap:6px;font:500 12px 'IBM Plex Sans',sans-serif;color:var(--grn,#1f9d63);grid-area:time;justify-self:end"><span style="width:6px;height:6px;border-radius:50%;background:var(--grnDot,#22b573)"></span>9s ago</span>
+                </div>
+                <sc-if value="{{ open.bazel }}" hint-placeholder-val="{{ false }}">
+                  <div style="margin:0 16px 12px;background:#0d1117;border:1px solid #1f2730;border-radius:8px;overflow:hidden">
+                    <div style="display:flex;align-items:center;gap:10px;padding:6px 12px;border-bottom:1px solid #1f2730;font:500 10.5px 'IBM Plex Sans',sans-serif;color:#7d8a97"><span>pane output — last 50 lines</span><span style="margin-left:auto">captured 9s ago · click row to close</span></div>
+                    <div style="padding:10px 14px;font:400 11.5px/1.65 'IBM Plex Mono',monospace;color:#c9d1d9;max-height:240px;overflow:auto">
+                      <div style="color:#4a5561">… 45 earlier lines</div>
+                      <div style="color:#7d8a97">INFO: Analyzed 214 targets (0 packages loaded, 0 targets configured).</div>
+                      <div>[1,842 / 2,067] Compiling services/ingest/service.cc; 4s</div>
+                      <div>[1,901 / 2,067] Linking services/ingest/ingest_server; 2s</div>
+                    </div>
+                  </div>
+                </sc-if>
+              </div>
+            </div>
+          </div>
+          <!-- tab: deploy -->
+          <div style="border:1px solid var(--border2,#f3f6f8);border-radius:10px;overflow:hidden">
+            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:5px 8px;padding:8px 16px;background:var(--surface2,#fbfcfd);border-bottom:1px solid var(--border2,#f3f6f8)">
+              <span style="font:400 11px 'IBM Plex Mono',monospace;color:var(--faint,#b3bec8)">tab</span>
+              <span style="font:600 12px 'IBM Plex Sans',sans-serif;color:var(--tx,#1c242e)">deploy</span>
+              <span style="margin-left:auto;font:400 11px 'IBM Plex Sans',sans-serif;color:var(--faint,#b3bec8)">2 panes</span>
+            </div>
+            <div style="display:flex;flex-direction:column">
+              <div style="display:flex;flex-direction:column;border-bottom:1px solid var(--border2,#f3f6f8)">
+                <div onClick="{{ toggle.kubectl }}" style="display:grid;grid-template-columns:var(--rowCols,160px minmax(0,1fr) 200px 130px);grid-template-areas:var(--rowAreas,'name cmd flags time');row-gap:4px;align-items:center;column-gap:14px;padding:9px 16px;cursor:pointer" style-hover="background:var(--surface2,#fbfcfd)">
+                  <span style="grid-area:name;font:500 13px 'IBM Plex Mono',monospace;color:var(--tx,#1c242e)">kubectl</span>
+                  <span style="grid-area:cmd;font:400 12.5px 'IBM Plex Mono',monospace;color:var(--tx3,#8b98a5);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">kubectl rollout status deploy/ingest</span>
+                  <span style="grid-area:flags"></span>
+                  <span style="font:400 12px 'IBM Plex Sans',sans-serif;color:var(--tx2,#61707e);grid-area:time;justify-self:end">6m ago</span>
+                </div>
+                <sc-if value="{{ open.kubectl }}" hint-placeholder-val="{{ false }}">
+                  <div style="margin:0 16px 12px;background:#0d1117;border:1px solid #1f2730;border-radius:8px;overflow:hidden">
+                    <div style="display:flex;align-items:center;gap:10px;padding:6px 12px;border-bottom:1px solid #1f2730;font:500 10.5px 'IBM Plex Sans',sans-serif;color:#7d8a97"><span>pane output — last 50 lines</span><span style="margin-left:auto">captured 6m ago · click row to close</span></div>
+                    <div style="padding:10px 14px;font:400 11.5px/1.65 'IBM Plex Mono',monospace;color:#c9d1d9;max-height:240px;overflow:auto">
+                      <div style="color:#4a5561">… 48 earlier lines</div>
+                      <div style="color:#7d8a97">Waiting for deployment "ingest" rollout to finish: 2 of 3 updated replicas are available...</div>
+                      <div style="color:#7ee2a8">deployment "ingest" successfully rolled out</div>
+                    </div>
+                  </div>
+                </sc-if>
+              </div>
+              <div style="display:flex;flex-direction:column">
+                <div onClick="{{ toggle.htop }}" style="display:grid;grid-template-columns:var(--rowCols,160px minmax(0,1fr) 200px 130px);grid-template-areas:var(--rowAreas,'name cmd flags time');row-gap:4px;align-items:center;column-gap:14px;padding:9px 16px;cursor:pointer" style-hover="background:var(--surface2,#fbfcfd)">
+                  <span style="grid-area:name;font:500 13px 'IBM Plex Mono',monospace;color:var(--tx,#1c242e)">htop</span>
+                  <span style="grid-area:cmd;font:400 12.5px 'IBM Plex Mono',monospace;color:var(--tx3,#8b98a5)">htop</span>
+                  <span style="grid-area:flags"></span>
+                  <span style="font:400 12px 'IBM Plex Sans',sans-serif;color:var(--tx3,#8b98a5);border:1px dashed var(--border,#cfd9e2);border-radius:6px;padding:1px 9px;grid-area:time;justify-self:end">Unknown</span>
+                </div>
+                <sc-if value="{{ open.htop }}" hint-placeholder-val="{{ false }}">
+                  <div style="margin:0 16px 12px;background:#0d1117;border:1px solid #1f2730;border-radius:8px;overflow:hidden">
+                    <div style="display:flex;align-items:center;gap:10px;padding:6px 12px;border-bottom:1px solid #1f2730;font:500 10.5px 'IBM Plex Sans',sans-serif;color:#7d8a97"><span>pane output — last 50 lines</span><span style="margin-left:auto">no change observed yet · click row to close</span></div>
+                    <div style="padding:10px 14px;font:400 11.5px/1.65 'IBM Plex Mono',monospace;color:#c9d1d9;max-height:240px;overflow:auto">
+                      <div style="color:#4a5561">… 46 earlier lines</div>
+                      <div><span style="color:#7ee2a8">CPU</span> [||||||&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; 23%]&#160;&#160;<span style="color:#7ee2a8">Mem</span> [||||||||||&#160;&#160;&#160;&#160;&#160; 5.1G/16G]</div>
+                      <div style="color:#7d8a97">  PID USER  PRI  CPU%  MEM%  Command</div>
+                      <div style="color:#7d8a97"> 4211 ci     20  81.2   3.1  bazel-server</div>
+                    </div>
+                  </div>
+                </sc-if>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ detail: hidden machine ============ -->
+    <sc-if value="{{ showStale }}" hint-placeholder-val="{{ true }}">
+    <div id="m-hidden" style="display:flex;flex-direction:column;gap:14px;scroll-margin-top:70px" data-screen-label="Detail hidden machine">
+      <div style="display:flex;flex-direction:column;gap:6px;padding-top:8px;border-top:1px solid var(--border,#e4e9ee)">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;padding-top:8px">
+          <span style="width:9px;height:9px;border-radius:50%;background:var(--ambDot,#c8b47a)"></span>
+          <span style="font:500 18px 'IBM Plex Mono',monospace;color:var(--tx3,#8b98a5);font-style:italic">&lt;machine hidden&gt;</span>
+          <span style="font:500 10.5px 'IBM Plex Sans',sans-serif;color:var(--tx3,#8b98a5);background:var(--border2,#eef2f5);border-radius:99px;padding:2px 8px">hidden</span>
+          <span style="font:500 10.5px 'IBM Plex Sans',sans-serif;color:var(--amb,#a1770a);background:var(--ambBg,#faf3df);border-radius:99px;padding:2px 8px">privacy: restricted (all names)</span>
+          <span style="margin-left:auto;font:400 12px 'IBM Plex Sans',sans-serif;color:var(--amb,#a1770a)">stale — last seen 42m ago</span>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px 18px;font:400 11.5px 'IBM Plex Sans',sans-serif;color:var(--tx3,#8b98a5);padding-left:19px">
+          <span>first seen Jun 20, 2026</span><span style="font-family:'IBM Plex Mono',monospace">m_c07e992f</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;background:var(--ambBg,#faf3df);border:1px solid var(--ambBd,#eadfbc);border-radius:10px;padding:10px 14px;font:400 12px 'IBM Plex Sans',sans-serif;color:var(--amb,#a1770a)">
+        Showing the last snapshot received, 42m ago. The plugin is fire-and-forget — this could be a closed laptop or a network gap; the data can't tell which.
+      </div>
+
+      <div style="background:var(--surface,#ffffff);border:1px solid var(--border,#e4e9ee);border-radius:12px;overflow:hidden;opacity:.85">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:12px 18px;border-bottom:1px solid var(--border2,#f3f6f8);background:var(--surface2,#fbfcfd)">
+          <span style="width:8px;height:8px;border-radius:50%;background:var(--grnDot,#22b573)"></span>
+          <span style="font:500 14px 'IBM Plex Mono',monospace;color:var(--tx3,#8b98a5);font-style:italic">&lt;hidden&gt;</span>
+          <span style="font:500 10px 'IBM Plex Sans',sans-serif;color:var(--blu,#2f6fd0);background:var(--bluBg,#e8f0f9);border-radius:99px;padding:2px 8px">current</span>
+          <span style="font:500 10px 'IBM Plex Sans',sans-serif;color:var(--grn,#1f9d63);background:var(--grnBg,#e5f6ee);border-radius:99px;padding:2px 8px">live</span>
+          <span style="margin-left:auto;font:400 11.5px 'IBM Plex Sans',sans-serif;color:var(--tx3,#8b98a5)">2 tabs · 4 panes</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;padding:12px 14px">
+          <div style="border:1px solid var(--border2,#f3f6f8);border-radius:10px;overflow:hidden">
+            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:5px 8px;padding:8px 16px;background:var(--surface2,#fbfcfd);border-bottom:1px solid var(--border2,#f3f6f8)">
+              <span style="font:400 11px 'IBM Plex Mono',monospace;color:var(--faint,#b3bec8)">tab</span>
+              <span style="font:500 12px 'IBM Plex Mono',monospace;color:var(--tx3,#8b98a5);font-style:italic">&lt;hidden&gt;</span>
+              <span style="font:500 9.5px 'IBM Plex Sans',sans-serif;color:var(--blu,#2f6fd0);background:var(--bluBg,#e8f0f9);border-radius:99px;padding:1px 6px">active</span>
+              <span style="margin-left:auto;font:400 11px 'IBM Plex Sans',sans-serif;color:var(--faint,#b3bec8)">2 panes</span>
+            </div>
+            <div style="display:flex;flex-direction:column">
+              <div style="display:grid;grid-template-columns:var(--rowCols,160px minmax(0,1fr) 200px 130px);grid-template-areas:var(--rowAreas,'name cmd flags time');row-gap:4px;align-items:center;column-gap:14px;padding:9px 16px;border-bottom:1px solid var(--border2,#f3f6f8)">
+                <span style="grid-area:name;font:500 13px 'IBM Plex Mono',monospace;color:var(--tx3,#8b98a5);font-style:italic">&lt;hidden&gt;</span>
+                <span style="grid-area:cmd;font:400 12.5px 'IBM Plex Mono',monospace;color:var(--faint,#b3bec8);font-style:italic">&lt;hidden&gt;</span>
+                <span style="grid-area:flags;display:flex;gap:4px"><span style="font:500 10px 'IBM Plex Sans',sans-serif;color:var(--blu,#2f6fd0);background:var(--bluBg,#e8f0f9);border-radius:99px;padding:2px 8px">focused</span></span>
+                <span style="font:400 12px 'IBM Plex Sans',sans-serif;color:var(--tx2,#61707e);grid-area:time;justify-self:end">44m ago</span>
+              </div>
+              <div style="display:grid;grid-template-columns:var(--rowCols,160px minmax(0,1fr) 200px 130px);grid-template-areas:var(--rowAreas,'name cmd flags time');row-gap:4px;align-items:center;column-gap:14px;padding:9px 16px">
+                <span style="grid-area:name;font:500 13px 'IBM Plex Mono',monospace;color:var(--tx3,#8b98a5);font-style:italic">&lt;hidden&gt;</span>
+                <span style="grid-area:cmd;font:400 12.5px 'IBM Plex Mono',monospace;color:var(--faint,#b3bec8);font-style:italic">&lt;hidden&gt;</span>
+                <span style="grid-area:flags"></span>
+                <span style="font:400 12px 'IBM Plex Sans',sans-serif;color:var(--tx3,#8b98a5);border:1px dashed var(--border,#cfd9e2);border-radius:6px;padding:1px 9px;grid-area:time;justify-self:end">Unknown</span>
+              </div>
+            </div>
+          </div>
+          <div style="border:1px solid var(--border2,#f3f6f8);border-radius:10px;overflow:hidden">
+            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:5px 8px;padding:8px 16px;background:var(--surface2,#fbfcfd);border-bottom:1px solid var(--border2,#f3f6f8)">
+              <span style="font:400 11px 'IBM Plex Mono',monospace;color:var(--faint,#b3bec8)">tab</span>
+              <span style="font:500 12px 'IBM Plex Mono',monospace;color:var(--tx3,#8b98a5);font-style:italic">&lt;hidden&gt;</span>
+              <span style="margin-left:auto;font:400 11px 'IBM Plex Sans',sans-serif;color:var(--faint,#b3bec8)">2 panes</span>
+            </div>
+            <div style="display:flex;flex-direction:column">
+              <div style="display:grid;grid-template-columns:var(--rowCols,160px minmax(0,1fr) 200px 130px);grid-template-areas:var(--rowAreas,'name cmd flags time');row-gap:4px;align-items:center;column-gap:14px;padding:9px 16px;border-bottom:1px solid var(--border2,#f3f6f8)">
+                <span style="grid-area:name;font:500 13px 'IBM Plex Mono',monospace;color:var(--tx3,#8b98a5);font-style:italic">&lt;hidden&gt;</span>
+                <span style="grid-area:cmd;font:400 12.5px 'IBM Plex Mono',monospace;color:var(--faint,#b3bec8);font-style:italic">&lt;hidden&gt;</span>
+                <span style="grid-area:flags"></span>
+                <span style="font:400 12px 'IBM Plex Sans',sans-serif;color:var(--tx2,#61707e);grid-area:time;justify-self:end">51m ago</span>
+              </div>
+              <div style="display:grid;grid-template-columns:var(--rowCols,160px minmax(0,1fr) 200px 130px);grid-template-areas:var(--rowAreas,'name cmd flags time');row-gap:4px;align-items:center;column-gap:14px;padding:9px 16px">
+                <span style="grid-area:name;font:500 13px 'IBM Plex Mono',monospace;color:var(--tx3,#8b98a5);font-style:italic">&lt;hidden&gt;</span>
+                <span style="grid-area:cmd;font:400 12.5px 'IBM Plex Mono',monospace;color:var(--faint,#b3bec8);font-style:italic">&lt;hidden&gt;</span>
+                <span style="grid-area:flags"></span>
+                <span style="font:400 12px 'IBM Plex Sans',sans-serif;color:var(--tx3,#8b98a5);border:1px dashed var(--border,#cfd9e2);border-radius:6px;padding:1px 9px;grid-area:time;justify-self:end">Unknown</span>
+              </div>
+            </div>
+          </div>
+          <div style="font:400 11px 'IBM Plex Sans',sans-serif;color:var(--faint,#b3bec8);padding:0 4px 2px">Pane output is redacted by this machine's privacy policy — rows are not expandable.</div>
+        </div>
+      </div>
+
+      <div style="background:var(--surface2,#fbfcfd);border:1px dashed var(--border,#d5dde4);border-radius:12px;display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:12px 18px;color:var(--tx3,#8b98a5)">
+        <span style="width:8px;height:8px;border-radius:50%;border:1.5px solid var(--faint,#b3bec8);background:transparent"></span>
+        <span style="font:500 14px 'IBM Plex Mono',monospace;font-style:italic">&lt;hidden&gt;</span>
+        <span style="font:500 10px 'IBM Plex Sans',sans-serif;color:var(--tx2,#61707e);background:var(--border2,#eef2f5);border-radius:99px;padding:2px 8px">resurrectable</span>
+        <span style="font:400 11.5px 'IBM Plex Sans',sans-serif">died 2h ago</span>
+        <span style="margin-left:auto;font:400 11px 'IBM Plex Sans',sans-serif;color:var(--faint,#b3bec8)">no tab/pane detail for dead sessions</span>
+      </div>
+    </div>
+    </sc-if>
+
+    <div style="font:400 11px 'IBM Plex Sans',sans-serif;color:var(--faint,#b3bec8)">Read-only view · "needs attention" = an agent pane quiet past the threshold · activity times come from the backend clock, not the plugin tick.</div>
+  </div>
+</div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{
+  &quot;defaultTheme&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;light&quot;, &quot;dark&quot;], &quot;default&quot;: &quot;light&quot;, &quot;tsType&quot;: &quot;'light' | 'dark'&quot;, &quot;section&quot;: &quot;Appearance&quot;},
+  &quot;showStaleMachine&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Data&quot;}
+}">
+class Component extends DCLogic {
+  state = { theme: null, open: {}, mobile: false };
+
+  componentDidMount() {
+    this._mq = window.matchMedia('(max-width: 720px)');
+    this._onMq = () => this.setState({ mobile: this._mq.matches });
+    this._mq.addEventListener('change', this._onMq);
+    if (this._mq.matches) this.setState({ mobile: true });
+  }
+
+  componentWillUnmount() {
+    if (this._mq) this._mq.removeEventListener('change', this._onMq);
+  }
+
+  renderVals() {
+    const theme = this.state.theme ?? (this.props.defaultTheme ?? 'light');
+    const dark = theme === 'dark';
+
+    const light = {
+      '--bg': '#f5f7f9', '--surface': '#ffffff', '--surface2': '#fbfcfd',
+      '--border': '#e4e9ee', '--border2': '#f3f6f8',
+      '--tx': '#1c242e', '--tx2': '#61707e', '--tx3': '#8b98a5', '--faint': '#b3bec8',
+      '--grn': '#1f9d63', '--grnDot': '#22b573', '--grnBg': '#e5f6ee',
+      '--blu': '#2f6fd0', '--bluBg': '#e8f0f9',
+      '--amb': '#a1770a', '--ambDot': '#c8b47a', '--ambBg': '#faf3df', '--ambBd': '#eadfbc',
+      '--red': '#8b6d6d', '--redBg': '#f6ecec',
+      '--alias': '#7a6a9e', '--aliasBg': '#efeaf8',
+      '--att': '#c2410c', '--attBg': '#feeadd'
+    };
+    const darkVars = {
+      '--bg': '#14181d', '--surface': '#1a2027', '--surface2': '#1f262e',
+      '--border': '#262e37', '--border2': '#222932',
+      '--tx': '#e8edf2', '--tx2': '#94a1ae', '--tx3': '#7d8a97', '--faint': '#4a5561',
+      '--grn': '#5fd6a1', '--grnDot': '#34c98a', '--grnBg': 'rgba(52,201,138,.13)',
+      '--blu': '#8fb4e0', '--bluBg': 'rgba(80,130,190,.16)',
+      '--amb': '#e3b558', '--ambDot': '#a08c53', '--ambBg': 'rgba(227,181,88,.12)', '--ambBd': 'rgba(227,181,88,.25)',
+      '--red': '#d98a8a', '--redBg': 'rgba(217,138,138,.12)',
+      '--alias': '#b3a3d6', '--aliasBg': 'rgba(122,106,158,.25)',
+      '--att': '#f0966b', '--attBg': 'rgba(240,150,107,.14)'
+    };
+
+    const mobile = this.state.mobile;
+    const resp = {
+      '--padX': mobile ? '14px' : '24px',
+      '--rowCols': mobile ? 'minmax(0,1fr) auto' : '160px minmax(0,1fr) 200px 130px',
+      '--rowAreas': mobile ? '"name time" "cmd cmd" "flags flags"' : '"name cmd flags time"',
+      '--emailDisp': mobile ? 'none' : 'block'
+    };
+
+    const toggle = {};
+    ['nvim','cargo','claude','tail','zsh','ssh','bazel','kubectl','htop'].forEach((k) => {
+      toggle[k] = () => this.setState((s) => ({ open: Object.assign({}, s.open, { [k]: !s.open[k] }) }));
+    });
+
+    const goTo = {};
+    [['redLaptop','m-red-laptop'],['buildbox','m-buildbox'],['hidden','m-hidden']].forEach(([k, id]) => {
+      goTo[k] = () => {
+        const el = document.getElementById(id);
+        if (el) {
+          const y = el.getBoundingClientRect().top + window.scrollY - 66;
+          window.scrollTo({ top: y, behavior: y < window.scrollY ? 'auto' : 'smooth' });
+        }
+      };
+    });
+
+    return {
+      vars: Object.assign({}, dark ? darkVars : light, resp),
+      open: this.state.open,
+      toggle,
+      goTo,
+      toggleTheme: () => this.setState({ theme: dark ? 'light' : 'dark' }),
+      themeIcon: dark ? '\u2600' : '\u263e',
+      themeLabel: dark ? 'Light' : 'Dark',
+      showStale: this.props.showStaleMachine ?? true
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,1448 @@
+/* zantiflow dashboard theme (ADR-0008/0016). Built to the canonical v2 design
+   (design/dashboard/zantiflow-status-v2.dc.html): IBM Plex Sans/Mono, a light-default palette with a
+   dark variant. Theme resolves as: base = light; system dark applies unless the user explicitly chose
+   light; an explicit `data-theme` on <html> always wins (set pre-paint in layout.tsx, no flash). */
+
+/* Nerd-Font icon glyphs for pane output (ADR-0016). Terminal output can contain Powerline separators
+   and Font-Awesome/Font-Logo icons in the Unicode Private-Use Area that NO standard mono font renders
+   (they'd show as tofu). This is a tiny subset of Hack Nerd Font Mono (see public/fonts/README.md),
+   scoped by `unicode-range` so the browser downloads it ONLY when such a glyph is actually displayed —
+   never on initial load. It sits after IBM Plex Mono in the `.pout-body` stack, so Latin is unaffected. */
+@font-face {
+  font-family: 'Symbols Nerd Font Mono';
+  src: url('/fonts/symbols-nerd-mono.woff2') format('woff2');
+  font-display: swap;
+  unicode-range: U+E0A0-E0D7, U+F000-F2FF, U+F300-F381;
+}
+
+:root {
+  --bg: #f5f7f9;
+  --surface: #ffffff;
+  --surface2: #fbfcfd;
+  --border: #e4e9ee;
+  --border2: #f3f6f8;
+  --tx: #1c242e;
+  --tx2: #61707e;
+  --tx3: #8b98a5;
+  --faint: #b3bec8;
+  --grn: #1f9d63;
+  --grnDot: #22b573;
+  --grnBg: #e5f6ee;
+  --blu: #2f6fd0;
+  --bluBg: #e8f0f9;
+  --amb: #a1770a;
+  --ambDot: #c8b47a;
+  --ambBg: #faf3df;
+  --ambBd: #eadfbc;
+  --red: #8b6d6d;
+  --redBg: #f6ecec;
+  --alias: #7a6a9e;
+  --aliasBg: #efeaf8;
+  --att: #c2410c;
+  --attBg: #feeadd;
+  --attBd: #f5cdb4;
+  --think: #0e7490;
+  --thinkBg: #d9f1f7;
+
+  --font-sans: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* Legacy aliases so the other pages (tokens, pair, landing, promo) restyle with the theme. */
+  --fg: var(--tx);
+  --muted: var(--tx2);
+  --accent: var(--blu);
+  --panel: var(--surface);
+  --panel-2: var(--surface2);
+  --green: var(--grn);
+  --amber: var(--amb);
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  --bg: #14181d;
+  --surface: #1a2027;
+  --surface2: #1f262e;
+  --border: #262e37;
+  --border2: #222932;
+  --tx: #e8edf2;
+  --tx2: #94a1ae;
+  --tx3: #7d8a97;
+  --faint: #4a5561;
+  --grn: #5fd6a1;
+  --grnDot: #34c98a;
+  --grnBg: rgba(52, 201, 138, 0.13);
+  --blu: #8fb4e0;
+  --bluBg: rgba(80, 130, 190, 0.16);
+  --amb: #e3b558;
+  --ambDot: #a08c53;
+  --ambBg: rgba(227, 181, 88, 0.12);
+  --ambBd: rgba(227, 181, 88, 0.25);
+  --red: #d98a8a;
+  --redBg: rgba(217, 138, 138, 0.12);
+  --alias: #b3a3d6;
+  --aliasBg: rgba(122, 106, 158, 0.25);
+  --att: #f0966b;
+  --attBg: rgba(240, 150, 107, 0.14);
+  --attBd: rgba(240, 150, 107, 0.3);
+  --think: #57cbe6;
+  --thinkBg: rgba(87, 203, 230, 0.15);
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #14181d;
+    --surface: #1a2027;
+    --surface2: #1f262e;
+    --border: #262e37;
+    --border2: #222932;
+    --tx: #e8edf2;
+    --tx2: #94a1ae;
+    --tx3: #7d8a97;
+    --faint: #4a5561;
+    --grn: #5fd6a1;
+    --grnDot: #34c98a;
+    --grnBg: rgba(52, 201, 138, 0.13);
+    --blu: #8fb4e0;
+    --bluBg: rgba(80, 130, 190, 0.16);
+    --amb: #e3b558;
+    --ambDot: #a08c53;
+    --ambBg: rgba(227, 181, 88, 0.12);
+    --ambBd: rgba(227, 181, 88, 0.25);
+    --red: #d98a8a;
+    --redBg: rgba(217, 138, 138, 0.12);
+    --alias: #b3a3d6;
+    --aliasBg: rgba(122, 106, 158, 0.25);
+    --att: #f0966b;
+    --attBg: rgba(240, 150, 107, 0.14);
+    --think: #57cbe6;
+    --thinkBg: rgba(87, 203, 230, 0.15);
+    color-scheme: dark;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+body {
+  background: var(--bg);
+  color: var(--tx);
+  font: 400 14px/1.5 var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+a {
+  color: var(--blu);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+code {
+  font-family: var(--font-mono);
+  color: var(--tx3);
+}
+em {
+  font-style: normal;
+  color: var(--amb);
+  font-size: 12px;
+}
+.muted {
+  color: var(--tx2);
+}
+
+/* ---- shared utilities (used by tokens / pair / landing / promo pages) ---- */
+.wrap {
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 26px 24px 80px;
+}
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+}
+.topbar nav a {
+  margin-right: 12px;
+}
+.brand {
+  font-weight: 700;
+  color: var(--tx);
+  font-family: var(--font-mono);
+  text-decoration: none;
+}
+a.brand:hover {
+  color: var(--accent);
+  text-decoration: none;
+}
+.btn {
+  display: inline-block;
+  background: var(--blu);
+  color: #fff;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font: 600 13px var(--font-sans);
+}
+.btn.ghost {
+  background: transparent;
+  color: var(--tx);
+  border: 1px solid var(--border);
+}
+.btn.ghost:hover {
+  border-color: var(--tx3);
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.badge {
+  background: var(--attBg);
+  color: var(--att);
+  font-weight: 600;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+.banner {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin: 12px 0;
+}
+.secret {
+  user-select: all;
+  word-break: break-all;
+  color: var(--grn);
+  font-family: var(--font-mono);
+}
+/* The `/link <code>` command: a static `/link` prefix + a click-to-copy code button. Only the code is
+   selectable/copyable — clicking it copies just the code (never the `/link` prefix). */
+.link-cmd {
+  font-family: var(--font-mono);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.link-cmd-prefix {
+  color: var(--tx2);
+  user-select: none;
+}
+.code-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.code-copy {
+  font: inherit;
+  color: var(--grn);
+  background: var(--surface2);
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  padding: 2px 10px;
+  cursor: pointer;
+  word-break: break-all;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease,
+    background 0.15s ease;
+}
+.code-copy:hover {
+  border-color: var(--tx3);
+}
+.code-copy:focus-visible {
+  outline: 2px solid var(--blu);
+  outline-offset: 2px;
+}
+.code-copy.is-copied {
+  border-style: solid;
+  border-color: var(--grn);
+  background: var(--grnBg);
+}
+/* "Copied!" tooltip floating just above the code. */
+.code-copied {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translate(-50%, 4px);
+  padding: 3px 9px;
+  border-radius: 6px;
+  background: var(--grn);
+  color: #fff;
+  font: 600 11px var(--font-sans);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
+}
+.code-copied::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 4px solid transparent;
+  border-top-color: var(--grn);
+}
+.code-copied.is-shown {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+th,
+td {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  font-weight: 400;
+}
+th {
+  color: var(--tx2);
+  font-size: 12px;
+}
+input,
+select {
+  background: var(--surface);
+  color: var(--tx);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 7px 9px;
+  font: inherit;
+}
+
+/* ================= dashboard app bar ================= */
+.appbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  padding: 8px 24px;
+  min-height: 40px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.appbar-home {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  text-decoration: none;
+}
+.appbar-home:hover .appbar-brand {
+  color: var(--accent);
+}
+.brand-logo {
+  width: 22px;
+  height: 22px;
+  display: block;
+  flex: none;
+}
+.appbar-brand {
+  font: 600 14px var(--font-mono);
+  color: var(--tx);
+  letter-spacing: 0.01em;
+}
+.appbar-nav {
+  display: flex;
+  gap: 2px;
+  margin-left: 12px;
+}
+.appbar-nav a {
+  font: 500 13px var(--font-sans);
+  color: var(--tx2);
+  padding: 6px 12px;
+  border-radius: 6px;
+}
+.appbar-nav a:hover {
+  background: var(--surface2);
+  text-decoration: none;
+}
+.appbar-nav a.active {
+  color: var(--tx);
+  background: var(--bluBg);
+}
+.appbar-right {
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.appbar-email {
+  font: 400 12px var(--font-sans);
+  color: var(--tx2);
+}
+.avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--bluBg);
+  color: var(--blu);
+  display: grid;
+  place-items: center;
+  font: 600 11px var(--font-sans);
+  flex: none;
+}
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font: 500 12px var(--font-sans);
+  color: var(--tx2);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  padding: 5px 12px;
+  cursor: pointer;
+  user-select: none;
+}
+.theme-toggle:hover {
+  border-color: var(--tx3);
+  color: var(--tx);
+}
+
+/* ================= dashboard content ================= */
+.dash {
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 26px 24px 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+.note {
+  font: 400 11px var(--font-sans);
+  color: var(--faint);
+}
+
+/* ---- tokens page: token → machines (kick / rename / combined revoke) ---- */
+.tok-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+}
+.tok-card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  padding: 12px 16px;
+}
+.tok-card.revoked,
+.tok-card.expired {
+  opacity: 0.62;
+}
+.tok-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-height: 30px;
+}
+.tok-head .spacer,
+.mrow .spacer {
+  flex: 1 1 auto;
+}
+.tok-label {
+  font: 600 15px var(--font-sans);
+  color: var(--tx);
+}
+.tok-label.none {
+  font-weight: 400;
+  font-style: italic;
+  color: var(--tx3);
+}
+.tok-head input {
+  min-width: 200px;
+}
+.tok-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 16px;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--tx2);
+}
+.tok-machines {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border2);
+  display: flex;
+  flex-direction: column;
+}
+.mrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+}
+.mrow + .mrow {
+  border-top: 1px solid var(--border2);
+}
+.mrow-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0; /* let a long machineId wrap/shrink instead of overflowing the row */
+}
+.mrow-top {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+}
+.mrow .mname {
+  font-weight: 500;
+}
+.mrow .mmeta {
+  font-size: 12px;
+  color: var(--tx2);
+}
+.mrow .mid {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--tx3);
+  user-select: all; /* one-click select-all for easy copy */
+  overflow-wrap: anywhere;
+}
+.mempty {
+  font-size: 12px;
+}
+.btn.sm {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+/* Green "Cancel" for the inline confirm (the safe way out is the highlighted one; "Confirm" stays
+   a de-emphasised ghost). */
+.btn.grn {
+  background: var(--grn);
+  color: #fff;
+  border: none;
+}
+.btn.grn:hover {
+  filter: brightness(1.06);
+}
+.confirm-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.tok-other {
+  margin-top: 30px;
+}
+.tok-other h2 {
+  margin-bottom: 4px;
+}
+
+/* ---- overview ---- */
+.ov {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.ov-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+.ov-head h1 {
+  margin: 0;
+  font: 600 17px var(--font-sans);
+  color: var(--tx);
+}
+.ov-head .count {
+  font: 400 12px var(--font-sans);
+  color: var(--tx3);
+}
+/* Sort + filter controls, pushed to the right of the "Machines" heading. */
+.ov-tools {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font: 400 12px var(--font-sans);
+  color: var(--tx3);
+}
+.ov-tools label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.ov-tools select {
+  padding: 4px 8px;
+  border-radius: 6px;
+  font: 400 12px var(--font-sans);
+  color: var(--tx);
+}
+.ov-tools .check {
+  cursor: pointer;
+}
+.ov-tools .check input {
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.ov-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.mcard {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 1px 2px rgba(16, 24, 32, 0.04);
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  font: inherit;
+  color: inherit;
+}
+.mcard:hover {
+  border-color: var(--tx3);
+}
+.mcard.stale {
+  background: var(--surface2);
+}
+.mcard-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.mcard-name {
+  font: 600 14px var(--font-mono);
+  color: var(--tx);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mcard-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font: 400 12px var(--font-sans);
+  color: var(--tx2);
+}
+.counts b {
+  color: var(--tx);
+  font-weight: 600;
+}
+.mcard-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font: 400 11px var(--font-sans);
+  color: var(--faint);
+  border-top: 1px solid var(--border2);
+  padding-top: 10px;
+}
+.mcard-foot .warn {
+  color: var(--amb);
+}
+
+/* ---- status dot ---- */
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+}
+.dot.live {
+  background: var(--grnDot);
+}
+.dot.stale {
+  background: var(--ambDot);
+}
+.dot.dead {
+  background: transparent;
+  border: 1.5px solid var(--faint);
+}
+.dot.lg {
+  width: 9px;
+  height: 9px;
+}
+
+/* ---- pills (badges) ---- */
+.pill {
+  font: 500 10px var(--font-sans);
+  border-radius: 99px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+.pill.sm {
+  font-size: 9.5px;
+  padding: 2px 7px;
+}
+.pill.live,
+.pill.full,
+.pill.current-live {
+  color: var(--grn);
+  background: var(--grnBg);
+}
+.pill.stale,
+.pill.restricted,
+.pill.quiet {
+  color: var(--amb);
+  background: var(--ambBg);
+}
+.pill.real,
+.pill.current,
+.pill.active,
+.pill.focused {
+  color: var(--blu);
+  background: var(--bluBg);
+}
+.pill.alias {
+  color: var(--alias);
+  background: var(--aliasBg);
+}
+.pill.hidden,
+.pill.resurrectable {
+  color: var(--tx3);
+  background: var(--border2);
+}
+.pill.att,
+.pill.needs {
+  color: var(--att);
+  background: var(--attBg);
+}
+.pill.thinking {
+  color: var(--think);
+  background: var(--thinkBg);
+}
+.pill.exited {
+  color: var(--red);
+  background: var(--redBg);
+}
+
+/* ---- machine detail ---- */
+.mach {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  scroll-margin-top: 66px;
+}
+.mach-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.mach.stale-machine .mach-body {
+  opacity: 0.85;
+}
+.mach-head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+.mach-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  padding-top: 8px;
+}
+.mach-title .nm {
+  font: 600 18px var(--font-mono);
+  color: var(--tx);
+}
+.mach-title .updated {
+  margin-left: auto;
+  font: 400 12px var(--font-sans);
+  color: var(--tx2);
+}
+.mach-title .updated.warn {
+  color: var(--amb);
+}
+.mach-sub {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+  font: 400 11.5px var(--font-sans);
+  color: var(--tx3);
+  padding-left: 19px;
+}
+.mach-sub .mono {
+  font-family: var(--font-mono);
+}
+.stale-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--ambBg);
+  border: 1px solid var(--ambBd);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font: 400 12px var(--font-sans);
+  color: var(--amb);
+}
+
+/* ---- session card ---- */
+.sess {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(16, 24, 32, 0.04);
+}
+.sess-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border2);
+  background: var(--surface2);
+}
+.sess-head .nm {
+  font: 600 14px var(--font-sans);
+  color: var(--tx);
+}
+.sess-head .meta {
+  margin-left: auto;
+  font: 400 11.5px var(--font-sans);
+  color: var(--tx3);
+}
+.sess-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+}
+
+/* ---- tab group ---- */
+.tabg {
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.tabg-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px 8px;
+  padding: 8px 16px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border2);
+}
+.tabg-head .lbl {
+  font: 400 11px var(--font-mono);
+  color: var(--faint);
+}
+.tabg-head .nm {
+  font: 600 12px var(--font-sans);
+  color: var(--tx);
+}
+.tabg-head .meta {
+  margin-left: auto;
+  font: 400 11px var(--font-sans);
+  color: var(--faint);
+}
+.tabg-body {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---- pane row ---- */
+.prow-wrap {
+  display: flex;
+  flex-direction: column;
+}
+.prow-wrap + .prow-wrap {
+  border-top: 1px solid var(--border2);
+}
+.prow {
+  display: grid;
+  grid-template-columns: 160px minmax(0, 1fr) 200px 130px;
+  grid-template-areas: 'name cmd flags time';
+  row-gap: 4px;
+  align-items: center;
+  column-gap: 14px;
+  padding: 9px 16px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+}
+.prow:hover {
+  background: var(--surface2);
+}
+.prow .pname {
+  grid-area: name;
+  font: 500 13px var(--font-mono);
+  color: var(--tx);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.prow.exited .pname {
+  color: var(--tx3);
+  text-decoration: line-through;
+  text-decoration-color: var(--border);
+}
+.prow .pcmd {
+  grid-area: cmd;
+  font: 400 12.5px var(--font-mono);
+  color: var(--tx3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.prow .pflags {
+  grid-area: flags;
+  display: flex;
+  gap: 4px;
+}
+.prow .ptime {
+  grid-area: time;
+  justify-self: end;
+}
+
+/* pane activity time variants */
+.time-fresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: 500 12px var(--font-sans);
+  color: var(--grn);
+}
+.time-fresh .d {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--grnDot);
+}
+.time-plain {
+  font: 400 12px var(--font-sans);
+  color: var(--tx2);
+}
+.time-plain.faint {
+  color: var(--tx3);
+}
+.time-quiet {
+  font: 500 12px var(--font-sans);
+  color: var(--amb);
+  background: var(--ambBg);
+  border-radius: 6px;
+  padding: 2px 9px;
+}
+/* claude is actively working (ADR-0025): a spinning ring + "thinking…", distinct from the amber
+   "quiet Xm" needs-attention state. */
+.time-thinking {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: 500 12px var(--font-sans);
+  color: var(--think);
+}
+.time-thinking .spin {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid var(--think);
+  border-top-color: transparent;
+  animation: ztf-spin 0.8s linear infinite;
+}
+@keyframes ztf-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .time-thinking .spin {
+    animation: none;
+  }
+}
+.time-unknown {
+  font: 400 12px var(--font-sans);
+  color: var(--tx3);
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  padding: 1px 9px;
+}
+
+/* ---- dead session leaf ---- */
+.deadleaf {
+  background: var(--surface2);
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  padding: 12px 18px;
+  color: var(--tx3);
+}
+.deadleaf .nm {
+  font: 500 14px var(--font-sans);
+  color: var(--tx2);
+}
+.deadleaf .died {
+  font: 400 11.5px var(--font-sans);
+}
+.deadleaf .end {
+  margin-left: auto;
+  font: 400 11px var(--font-sans);
+  color: var(--faint);
+}
+
+/* ---- inline pane output drawer ---- */
+.pout {
+  margin: 0 16px 12px;
+  background: #0d1117;
+  border: 1px solid #1f2730;
+  border-radius: 8px;
+  overflow: hidden;
+  /* Hug the content (widest output line / header) instead of filling the row — no dead space on the
+     right for short output. Capped at the row width (minus the 16px side margins); wider output still
+     scrolls horizontally inside .pout-body. */
+  width: fit-content;
+  max-width: calc(100% - 32px);
+}
+.pout-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  border-bottom: 1px solid #1f2730;
+  font: 500 10.5px var(--font-sans);
+  color: #7d8a97;
+}
+.pout-head .r {
+  margin-left: auto;
+}
+/* Auto-refresh paused (ADR-0016): the FREE window is spent — a compact label + a button in the drawer
+   header to start a new window. Styled for the dark terminal chrome, matching the header borders. */
+.pout-resume-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.pout-paused {
+  color: #7d8a97;
+}
+.pout-resume {
+  font: 500 10.5px var(--font-sans);
+  color: #c9d1d9;
+  background: #1f2730;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  padding: 3px 10px;
+  cursor: pointer;
+}
+.pout-resume:hover {
+  background: #2a333d;
+  border-color: #3d4650;
+}
+.pout-body {
+  padding: 10px 14px;
+  /* Set family separately (not via the `font` shorthand) so the fallback list is unambiguous. IBM Plex
+     Mono (via next/font) lacks box-drawing/arrow/symbol glyphs (─ → ❯ ✔ █) that terminal output uses,
+     and next/font's variable has NO generic fallback — so we append a full mono stack ending in the
+     `monospace` generic, which covers those standard glyphs. Nerd-Font PUA icons (powerline/devicons)
+     need the bundled symbols font, added ahead of `monospace` where available. */
+  font-family:
+    var(--font-mono), 'Symbols Nerd Font Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, 'DejaVu Sans Mono',
+    monospace;
+  font-size: 11.5px;
+  line-height: 1.65;
+  color: #c9d1d9;
+  max-height: 420px; /* 1.75× the original 240px */
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+/* Terminal-output lines are a fixed character grid: preserve exact spacing and let long
+   lines overflow horizontally (scrolled by the body's `overflow: auto`) instead of
+   wrapping, which would break tables, box-drawing and ANSI alignment. The prose message
+   states (output-not-shared / error) keep the wrapping defaults above. */
+.pout-body.pout-lines {
+  white-space: pre;
+  word-break: normal;
+}
+/* Each line stretches to the widest line so ANSI background colours span the full scroll
+   width rather than stopping at the visible viewport edge. */
+.pout-body.pout-lines > div {
+  width: max-content;
+  min-width: 100%;
+}
+
+/* hidden/redacted name marker (shared by dashboard components) */
+.hidden {
+  color: var(--tx3);
+  font-style: italic;
+}
+
+@media (max-width: 720px) {
+  .appbar,
+  .dash {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+  .appbar-email {
+    display: none;
+  }
+  .prow {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: 'name time' 'cmd cmd' 'flags flags';
+  }
+}
+
+/* 404 / not-found page (app/not-found.tsx) — app chrome, theme-aware via the tokens above. The primary
+   button uses a fixed accessible blue (white text reads in both themes; the themed --blu goes light in
+   dark mode). */
+.nf {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 48px 24px;
+  background: var(--bg);
+}
+.nf-card {
+  width: 100%;
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 18px;
+}
+.nf-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+.nf-brand:hover {
+  text-decoration: none;
+}
+.nf-code {
+  font: 700 clamp(56px, 12vw, 92px) / 1 var(--font-mono);
+  letter-spacing: -0.03em;
+  color: var(--tx);
+}
+.nf-title {
+  margin: 0;
+  font: 700 clamp(22px, 4vw, 30px) / 1.15 var(--font-sans);
+  color: var(--tx);
+  text-wrap: balance;
+}
+.nf-lede {
+  margin: 0;
+  max-width: 460px;
+  font: 400 16px/1.6 var(--font-sans);
+  color: var(--tx2);
+  text-wrap: pretty;
+}
+.nf-tree {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 2px 0;
+  padding: 14px 16px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font: 400 13px/1.7 var(--font-mono);
+  color: var(--tx3);
+  overflow-x: auto;
+}
+.nf-tree .nf-attn {
+  color: var(--att);
+  font-weight: 600;
+}
+.nf-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 4px;
+}
+.nf-btn {
+  display: inline-block;
+  padding: 11px 22px;
+  font: 600 14px var(--font-sans);
+  color: #fff;
+  background: #2f6fd0;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  cursor: pointer;
+  text-decoration: none;
+}
+.nf-btn:hover {
+  background: #255cb0;
+  color: #fff;
+  text-decoration: none;
+}
+.nf-btn.ghost {
+  font-weight: 500;
+  color: var(--tx);
+  background: var(--surface);
+  border-color: var(--border);
+}
+.nf-btn.ghost:hover {
+  border-color: var(--tx3);
+  color: var(--tx);
+}
+.nf-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin-top: 6px;
+  font: 500 13px var(--font-sans);
+}
+.nf-links a {
+  color: var(--tx2);
+  text-decoration: none;
+}
+.nf-links a:hover {
+  color: var(--tx);
+  text-decoration: underline;
+}
+.nf-note {
+  margin: 6px 0 0;
+  font: 400 12px var(--font-mono);
+  color: var(--tx3);
+}
+
+/* Redeem-promo control (TopBar). The outcome message is a small popover below the field so it never
+   disrupts the toolbar row; colour keys the outcome (info / success / error), all theme-aware. */
+.redeem {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.redeem-input {
+  width: 130px;
+}
+.redeem-msg {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  max-width: min(300px, 72vw);
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--tx2);
+  font: 500 12px var(--font-sans);
+  line-height: 1.4;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+  z-index: 20;
+}
+.redeem-msg a {
+  color: var(--accent);
+  font-weight: 600;
+}
+.redeem-msg.is-ok {
+  border-color: var(--grn);
+  background: var(--grnBg);
+  color: var(--grn);
+}
+.redeem-msg.is-err {
+  border-color: var(--attBd);
+  background: var(--attBg);
+  color: var(--att);
+}
+
+/* ================= spotlight (ADR-0016) — live album of active Claude sessions ================= */
+.spot-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin: 4px 0 14px;
+}
+.spot-head h1 {
+  margin: 0;
+  font: 700 20px var(--font-sans);
+  color: var(--tx);
+}
+/* "Running only" filter, pushed to the right of the title (the Clear button follows it). */
+.spot-head .check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  cursor: pointer;
+  font: 400 13px var(--font-sans);
+  color: var(--tx3);
+}
+.spot-head .spot-running {
+  margin-left: auto;
+}
+.spot-head .check input {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.spot-empty {
+  color: var(--amb);
+  background: var(--ambBg);
+  border: 1px solid var(--ambBd);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font: 500 13px var(--font-sans);
+  margin: 0 0 14px;
+}
+.spot-album {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.spot-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+.spot-arrow {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--tx);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+.spot-arrow:hover:not(:disabled) {
+  border-color: var(--tx3);
+}
+.spot-arrow:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.spot-pos {
+  font: 600 13px var(--font-mono);
+  color: var(--tx2);
+  min-width: 64px;
+  text-align: center;
+}
+/* One "photo" — dark terminal chrome, mirroring the pane-output drawer (.pout) so output looks like a
+   terminal in both themes. Completed photos dim. */
+.spot-photo {
+  background: #0d1117;
+  border: 1px solid #1f2730;
+  border-radius: 10px;
+  overflow: hidden;
+}
+.spot-photo.done {
+  opacity: 0.62;
+}
+.spot-photo-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 8px 14px;
+  border-bottom: 1px solid #1f2730;
+  font: 500 12px var(--font-sans);
+  color: #c9d1d9;
+}
+.spot-photo-machine {
+  font-weight: 700;
+}
+.spot-photo-loc {
+  color: #7d8a97;
+}
+.spot-photo-note {
+  color: #7d8a97;
+  font-size: 11px;
+}
+.spot-photo-note.r {
+  margin-left: auto;
+}
+.spot-photo-body {
+  padding: 12px 16px;
+  font-family:
+    var(--font-mono), 'Symbols Nerd Font Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, 'DejaVu Sans Mono',
+    monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #c9d1d9;
+  height: 60vh;
+  min-height: 300px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+/* Fixed character grid (see .pout-body.pout-lines): preserve spacing, scroll long lines rather than
+   wrap so tables/box-drawing/ANSI stay aligned. Reused class name from the drawer. */
+.spot-photo-body.pout-lines {
+  white-space: pre;
+  word-break: normal;
+}
+.spot-photo-body.pout-lines > div {
+  width: max-content;
+  min-width: 100%;
+}
+.spot-photo-body.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #7d8a97;
+  font-family: var(--font-sans);
+  white-space: normal;
+  text-align: center;
+}
+.spot-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.spot-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: none;
+  padding: 0;
+  background: var(--faint);
+  cursor: pointer;
+}
+.spot-dot.done {
+  background: transparent;
+  border: 1px solid var(--faint);
+}
+.spot-dot.on {
+  background: var(--blu);
+  transform: scale(1.25);
+}

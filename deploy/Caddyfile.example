@@ -1,0 +1,21 @@
+# zantiflow reverse proxy — TLS termination + security headers (ADR-0018 §8, security-audit #5).
+# Replace zantiflow.example with your domain; Caddy auto-provisions a Let's Encrypt certificate.
+
+zantiflow.example {
+	encode gzip
+
+	# --- Security headers ---
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options    "nosniff"
+		X-Frame-Options           "DENY"
+		Referrer-Policy           "strict-origin-when-cross-origin"
+		# Strict CSP — the dashboard renders UNTRUSTED terminal output (ADR-0016 §D), so no inline/eval
+		# and no third-party origins. Tighten to your build's hashes/nonces.
+		Content-Security-Policy   "default-src 'self'; img-src 'self' https://lh3.googleusercontent.com data:; script-src 'self'; style-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
+		-Server
+	}
+
+	# Everything (incl. /api/v1, proxied on to the backend by the web tier) → the Next.js app.
+	reverse_proxy web:3000
+}

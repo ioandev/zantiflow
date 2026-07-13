@@ -1,0 +1,28 @@
+---
+title: Dashboard
+description: The Next.js PWA — live tree, tokens, notifications, and pane output.
+---
+
+The dashboard is a Next.js PWA. It proxies `/api/v1` to the backend on the same origin, so your session
+cookie and CORS just work — the browser only ever talks to one origin.
+
+## What you can do
+
+- **See your machines live** — the sessions → tabs → panes tree updates over Server-Sent Events. A
+  redacted name shows as `<hidden>`; a machine with no data yet shows `Unknown`.
+- **Manage ingest tokens** — create (the secret is shown once), list, and revoke.
+- **Enable notifications** — a button requests permission and subscribes to Web Push.
+- **View pane output** — click a pane (with output sharing on) to see the last ≤50 scrubbed, colored
+  lines. ANSI is rendered safely.
+- **Redeem a promo code** — for a month of PRO.
+- **Connect chat** (PRO) — link Discord/Telegram for DM notifications.
+
+## Install it
+
+It's a PWA — install it to your home screen for a native-app feel and reliable notifications (Web Push
+on installed PWAs is far more dependable, especially on mobile).
+
+## Safety
+
+All untrusted terminal text (names, commands, pane output) is escaped by the framework and never
+rendered as raw HTML — a hostile pane title can't run code in your browser.

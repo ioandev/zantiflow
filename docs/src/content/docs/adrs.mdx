@@ -1,0 +1,31 @@
+---
+title: What ADRs are
+description: How architecture decisions are recorded in this project.
+---
+
+Every significant decision in zantiflow is captured as an **Architecture Decision Record (ADR)** — a
+short Markdown file under [`adrs/`](https://github.com/ioandev/zantiflow/tree/main/adrs)
+in the repo. One decision, one file.
+
+## Why
+
+- **Context survives.** Anyone (including a future you) can see *why* something is the way it is, not
+  just *what* it is.
+- **Decisions are reviewable.** A change to how the system works is a change to an ADR — visible in
+  the diff.
+- **Onboarding is faster.** The ADRs, plus `FINDINGS.md` (verified plugin-API facts) and
+  `plans/execution-plan.md`, let a fresh contributor start without re-deriving the design.
+
+## Format (MADR-lite)
+
+Each ADR (`NNNN-kebab-title.md`) has: **Status** (Proposed / Accepted / Superseded), **Context**,
+**Decision Drivers**, **Considered Options**, **Decision**, **Consequences**, and **Open Questions**.
+
+## The rule
+
+**One decision = one ADR.** If work surfaces a new decision the ADRs don't settle, we write a new one
+(next number, updating `adrs/README.md`) rather than diverging silently.
+
+Notable ADRs: privacy Model A (0002), the two auth planes (0003/0004), attentions (0005), notifications
+& durable delivery (0006/0009), pane output & scrubbing (0016/0017), tiers & promo (0011), the bots
+(0007/0010), and dockerization (0021).

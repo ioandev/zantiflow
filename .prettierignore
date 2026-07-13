@@ -1,0 +1,18 @@
+# Formatter scope: source + config only. Prose (ADRs/docs/findings) and vendored assets are
+# left untouched so Prettier never reflows hand-written Markdown or the design mockup.
+node_modules
+dist
+target
+.next
+**/next-env.d.ts
+pnpm-lock.yaml
+**/*.md
+# Prisma has its own formatter (`prisma format`); SQL migrations are generated.
+**/*.prisma
+**/migrations/**/*.sql
+design
+docs
+deploy
+.github
+# Generated third-party license manifests (`just license`) — plain text, not formattable.
+**/LICENSES

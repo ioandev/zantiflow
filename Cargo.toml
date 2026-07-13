@@ -1,0 +1,11 @@
+# Rust workspace. Only the Zellij plugin is Rust; everything else is pnpm/TS (see pnpm-workspace.yaml).
+[workspace]
+members = ["apps/plugin"]
+resolver = "2"
+
+# Optimize the WASM plugin for size (it ships as a .wasm artifact).
+[profile.release]
+opt-level = "z"
+lto = true
+strip = true
+codegen-units = 1

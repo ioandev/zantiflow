@@ -1,0 +1,29 @@
+<svg width="680" height="680" viewBox="0 0 680 680" role="img" xmlns="http://www.w3.org/2000/svg">
+  <title>Z signal logo</title>
+  <desc>Stylized stencil-cut Z on dark teal tile with orange signal arcs and green-orange stripe</desc>
+  <defs>
+    <linearGradient id="zg" x1="0" y1="0" x2="0.4" y2="1">
+      <stop offset="0%" stop-color="#fbfdfc"/>
+      <stop offset="100%" stop-color="#ccd9de"/>
+    </linearGradient>
+    <linearGradient id="zg2" x1="0" y1="0" x2="0.5" y2="1">
+      <stop offset="0%" stop-color="#f2f7f7"/>
+      <stop offset="100%" stop-color="#c3d2d8"/>
+    </linearGradient>
+  </defs>
+  <rect x="26.2" y="24.0" width="635.7" height="621.9" rx="94" fill="#0c3140"/>
+  <rect x="26.2" y="332.0" width="238.2" height="18.2" fill="#52bea3"/>
+  <rect x="423.6" y="332.0" width="238.3" height="18.2" fill="#e58450"/>
+  <g fill="#06202b" opacity="0.3" transform="translate(3,4)">
+    <polygon points="255.0,249.2 364.0,249.2 329.8,287.7 255.0,287.7"/>
+    <polygon points="392.3,249.2 427.9,249.2 427.9,288.4 320.4,398.1 289.1,437.4 252.1,437.4 252.1,409.0"/>
+    <polygon points="355.3,398.1 423.5,398.1 423.5,437.4 318.9,437.4"/>
+  </g>
+  <polygon points="255.0,249.2 364.0,249.2 329.8,287.7 255.0,287.7" fill="url(#zg)"/>
+  <polygon points="392.3,249.2 427.9,249.2 427.9,288.4 320.4,398.1 289.1,437.4 252.1,437.4 252.1,409.0" fill="url(#zg2)"/>
+  <polygon points="355.3,398.1 423.5,398.1 423.5,437.4 318.9,437.4" fill="url(#zg)"/>
+  <g fill="none" stroke="#ec844a" stroke-width="19" stroke-linecap="round">
+    <path d="M 412.3,215.4 A 40,40 0 0 1 462.5,269.3"/>
+    <path d="M 411.5,178.4 A 76,76 0 0 1 500.1,270.1"/>
+  </g>
+</svg>

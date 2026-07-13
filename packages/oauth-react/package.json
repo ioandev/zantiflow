@@ -1,0 +1,68 @@
+{
+  "name": "@zantiflow/oauth-react",
+  "version": "0.1.0",
+  "description": "React hook for popup OAuth sign-in — opens the popup and resolves the identity token via an origin-checked postMessage handshake.",
+  "license": "Apache-2.0",
+  "author": "ioandev",
+  "homepage": "https://github.com/ioandev/zantiflow/tree/main/packages/oauth-react#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ioandev/zantiflow.git",
+    "directory": "packages/oauth-react"
+  },
+  "bugs": {
+    "url": "https://github.com/ioandev/zantiflow/issues"
+  },
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "oauth",
+    "react",
+    "hook",
+    "popup",
+    "google",
+    "apple",
+    "authentication"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist",
+    "test": "vitest run",
+    "prepublishOnly": "npm run clean && npm run build"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0"
+  },
+  "devDependencies": {
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.3",
+    "jsdom": "^29.1.1",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "typescript": "^5.9.3"
+  }
+}

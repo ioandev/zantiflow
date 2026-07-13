@@ -1,0 +1,30 @@
+---
+title: Backend
+description: The multi-tenant API — auth planes, ingest, and the read API.
+---
+
+The backend is Node/TypeScript/Express with MariaDB via Prisma. Everything is under `/api/v1`, and
+every stored row is scoped by `accountId` at the data layer (cross-tenant isolation is the top
+invariant).
+
+## Two auth planes
+
+- **Ingest tokens** — `Authorization: Bearer ztf_…`, random and SHA-256-hashed at rest, ≤10 active per
+  account, **write-only**. They push snapshots and can't read or manage anything.
+- **Owner sessions** — Google sign-in issues a `ztf_session` HMAC cookie (HttpOnly, SameSite=Lax,
+  Secure in prod). Every request re-checks the DB and a `sessionEpoch` so "log out everywhere" is
+  instant.
+
+## Endpoints (selected)
+
+- `POST /ingest` — the plugin submits a wire-v4 snapshot (validated at the boundary; unknown-newer → 400).
+- `GET /machines`, `GET /machines/:id`, `GET /attentions`, `GET /stream` (SSE) — owner-gated reads.
+- `GET|POST|DELETE /tokens` — ingest-token management (secret shown once).
+- `POST /pair/start|poll`, `POST /pair/approve` — device pairing (RFC-8628-style).
+- `POST /machines/:id/panes/:paneId/output/request` + `GET …/output` — the on-demand output channel.
+- `POST /promo/redeem`, `GET /promo/current` — self-serve PRO.
+
+## Deploy
+
+`docker compose up` brings up MariaDB + backend + web + Caddy. The backend image's entrypoint runs
+`prisma migrate deploy` before starting. See `deploy/docker-compose.example.yml`.

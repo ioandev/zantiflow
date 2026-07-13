@@ -1,0 +1,16 @@
+packages:
+  - 'packages/*'
+  - 'apps/*'
+  - 'docs'
+allowBuilds:
+  # Prisma needs its postinstall to fetch the query engine + generate the client.
+  '@prisma/client': true
+  '@prisma/engines': true
+  prisma: true
+  esbuild: true
+  # testcontainers' optional native deps — not needed for a local Docker socket; skip their builds.
+  cpu-features: false
+  protobufjs: false
+  ssh2: false
+  # Next's optional native image optimizer — not needed (we ship no <Image> pipeline); skip its build.
+  sharp: false

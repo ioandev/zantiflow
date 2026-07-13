@@ -1,0 +1,31 @@
+---
+title: Notifications & bots
+description: Web Push for everyone; Discord + Telegram DMs for PRO.
+---
+
+When an attention fires (and stays active past its tier threshold), zantiflow delivers a notification.
+Delivery is durable — persisted in MariaDB, acked per channel, and replayed after a restart.
+
+## Web Push (everyone)
+
+Grant permission in the dashboard and you'll get a browser push. Notifications are **name-free** — they
+tell you *that* a session needs attention, never leaking session/pane names or content.
+
+## Chat DMs (PRO)
+
+PRO users can additionally link **Discord** and **Telegram**. The bots are Python (`discord.py` /
+`aiogram`) and dial an **outbound** WebSocket to the backend — so the bots need no public ingress.
+
+### Linking
+
+1. On the dashboard's Integrations page, mint a one-time link token for the platform.
+2. DM the bot `/link <token>` (Telegram also supports a `?start=<token>` deep link).
+3. The bot relays it; the backend validates the single-use token and binds your platform account.
+
+From then on, the backend dispatches "DM this user" over the WS; the bot delivers and acks. If a bot is
+offline, deliveries queue and flush on reconnect. `deliveryId` makes retries idempotent.
+
+## Thresholds are server-side
+
+How often an attention fires (free ≥5 min, PRO ≥1 min) is enforced entirely on the backend — a client
+can never unlock PRO cadence.

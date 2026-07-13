@@ -1,0 +1,197 @@
+name: Docker publish
+
+# Build + push all app images to Docker Hub (ADR-0021 §2), tests-gated and all-or-nothing.
+#
+# Triggers:
+#   push to main            → continuous dev image: :edge (moving) + :sha-<short> (immutable)
+#   GitHub Release published → versioned release: :X.Y.Z + :X.Y (+ :latest iff highest stable), or
+#                              :X.Y.Z-rc.N + :next for a pre-release Release
+# (No `develop` — temporary. No raw tag-push trigger — releases go through the Releases UI/API so
+#  publishing is gated by who can publish a Release; add a tag-protection rule on v* for extra safety.)
+#
+# Flow: `test` (reusable suite) → `build` (each service × platform, pushes layers BY DIGEST, no tags) →
+# `merge` (assembles the multi-arch manifest and applies the human tags). Nothing is tagged/visible
+# unless every test AND every per-platform build succeeded, so a single failure publishes nothing.
+# Building by digest also means layers move to the registry once — no gha cache round-trip.
+on:
+  push:
+    branches: [main]
+  release:
+    types: [published]
+
+concurrency:
+  group: docker-publish-${{ github.ref }}
+  # Cancel superseded main (edge) builds; never cancel a release mid-publish.
+  cancel-in-progress: ${{ github.event_name == 'push' }}
+
+permissions:
+  contents: read
+
+env:
+  IMAGE_NAMESPACE: zantiflow
+
+jobs:
+  # Gate: the whole publish is skipped unless this passes.
+  test:
+    uses: ./.github/workflows/tests.yml
+
+  # Build each service for each platform on a NATIVE runner (no QEMU): amd64 on x86, arm64 on GitHub's
+  # hosted Arm runners (ubuntu-24.04-arm — free for public repos; needs a plan/label change if private).
+  # Push the layers BY DIGEST (untagged, so nothing is user-visible yet). fail-fast: false so every image
+  # reports; `needs: test` gates on tests.
+  build:
+    needs: test
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [backend, web, discord-bot, telegram-bot]
+        platform: [linux/amd64, linux/arm64]
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-latest
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
+    steps:
+      - name: Compute platform pair
+        run: |
+          platform="${{ matrix.platform }}"
+          echo "PLATFORM_PAIR=${platform//\//-}" >> "$GITHUB_ENV"
+
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Labels
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_NAMESPACE }}/${{ matrix.service }}
+
+      # The version each image reports (footer / startup log / /healthz): the Release tag (sans `v`)
+      # for a release, else `edge` for a main push. Paired with the short commit for exact provenance.
+      - name: Compute build version
+        id: ver
+        run: |
+          echo "sha=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+          if [ "${{ github.event_name }}" = "release" ]; then
+            v="${{ github.event.release.tag_name }}"
+            echo "version=${v#v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=edge" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build & push by digest
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/${{ matrix.service }}/Dockerfile
+          platforms: ${{ matrix.platform }}
+          build-args: |
+            APP_VERSION=${{ steps.ver.outputs.version }}
+            GIT_SHA=${{ steps.ver.outputs.sha }}
+          labels: ${{ steps.meta.outputs.labels }}
+          outputs: type=image,name=${{ env.IMAGE_NAMESPACE }}/${{ matrix.service }},push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=${{ matrix.service }}-${{ env.PLATFORM_PAIR }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}-${{ env.PLATFORM_PAIR }}
+          provenance: false
+
+      - name: Export digest
+        run: |
+          mkdir -p "${{ runner.temp }}/digests"
+          digest="${{ steps.build.outputs.digest }}"
+          touch "${{ runner.temp }}/digests/${digest#sha256:}"
+
+      - name: Upload digest
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ matrix.service }}-${{ env.PLATFORM_PAIR }}
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  # Promote: only runs if EVERY build leg (all services × platforms) succeeded. Assembles each service's
+  # per-platform digests into one multi-arch manifest and applies the human tags — the moment images
+  # become visible. Per-service so metadata-action runs once per image.
+  merge:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [backend, web, discord-bot, telegram-bot]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # need every tag for the "highest stable release?" check
+
+      - name: Download digests
+        uses: actions/download-artifact@v4
+        with:
+          path: ${{ runner.temp }}/digests
+          pattern: digests-${{ matrix.service }}-*
+          merge-multiple: true
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # :latest must track the newest STABLE release only — never a pre-release, never a backport (a
+      # v1.5.1 Release published while v2.x exists). GitHub's own prerelease flag handles the first;
+      # a git-tag version-sort handles the second.
+      - name: Is this the highest stable release?
+        id: release
+        if: github.event_name == 'release'
+        run: |
+          tag="${{ github.event.release.tag_name }}"
+          if [ "${{ github.event.release.prerelease }}" = "true" ]; then
+            echo "is_latest=false" >> "$GITHUB_OUTPUT" # pre-release → :next, never :latest
+          else
+            highest="$(git tag --list 'v*' | awk '!/-/' | sort -V | tail -n1)"
+            if [ "$tag" = "$highest" ]; then
+              echo "is_latest=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "is_latest=false" >> "$GITHUB_OUTPUT" # older line / backport → do NOT move :latest
+            fi
+            echo "tag=$tag highest_stable=$highest" >&2
+          fi
+
+      - name: Derive tags & labels
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_NAMESPACE }}/${{ matrix.service }}
+          flavor: |
+            latest=false
+          tags: |
+            # release version, from the Release's tag (metadata-action skips :X.Y for pre-releases):
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            # continuous, from a main push:
+            type=edge,branch=main
+            type=sha,prefix=sha-,format=short
+            # moving pre-release channel (a Release flagged "pre-release"):
+            type=raw,value=next,enable=${{ github.event_name == 'release' && github.event.release.prerelease }}
+            # :latest ONLY for the highest stable release (computed above):
+            type=raw,value=latest,enable=${{ steps.release.outputs.is_latest == 'true' }}
+
+      - name: Create manifest list & push tags
+        working-directory: ${{ runner.temp }}/digests
+        run: |
+          docker buildx imagetools create \
+            $(jq -cr '.target."docker-metadata-action".tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
+            $(printf '${{ env.IMAGE_NAMESPACE }}/${{ matrix.service }}@sha256:%s ' *)
+
+      - name: Inspect
+        run: docker buildx imagetools inspect ${{ env.IMAGE_NAMESPACE }}/${{ matrix.service }}:${{ steps.meta.outputs.version }}

@@ -1,0 +1,32 @@
+# Local dev database for the backend. Isolated, disposable MariaDB — NOT the production topology
+# (that's deploy/docker-compose.example.yml, where MariaDB has no published port). This one DOES
+# publish a host port so `pnpm dev` can reach it directly from the host.
+#
+#   docker compose -f docker-compose.dev.yml up -d     # or: pnpm db:up
+#   docker compose -f docker-compose.dev.yml down       #     pnpm db:down
+#
+# Version pinned to match deploy (ADR-0021) and the testcontainers integration tests (MariaDB 11.4).
+services:
+  db:
+    image: mariadb:11.4
+    container_name: zantiflow_dev_db
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: zantiflow
+      MARIADB_USER: zantiflow
+      MARIADB_PASSWORD: zantiflow
+      MARIADB_ROOT_PASSWORD: zantiflow
+    ports:
+      # host 3308 → container 3306. Bound to loopback only; 3306 (system MariaDB) and 3307
+      # (commenttoday) are already taken on this machine. Match DATABASE_URL in .env.
+      - "127.0.0.1:3308:3306"
+    volumes:
+      - zantiflow-dev-db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  zantiflow-dev-db:

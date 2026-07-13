@@ -1,0 +1,74 @@
+---
+title: Licensing & compliance
+description: How zantiflow is licensed, what its dependencies require, and why a pro tier is unrestricted.
+---
+
+zantiflow is open source and built almost entirely on permissively-licensed dependencies. This page
+summarises how the pieces fit together and what obligations come with redistributing the project. The
+authoritative, always-current list of every third-party license lives in the generated
+[`LICENSES`](https://github.com/ioandev/zantiflow/blob/main/LICENSES) manifest — run `just license`
+to regenerate it.
+
+:::note[Not legal advice]
+This is an engineering summary of the license terms, not legal advice. For anything you're betting a
+business on, have counsel confirm the details for your specific distribution.
+:::
+
+## What zantiflow itself is licensed under
+
+- **The project's source code** is **Apache-2.0** — see [`LICENSE`](https://github.com/ioandev/zantiflow/blob/main/LICENSE)
+  and [`NOTICE`](https://github.com/ioandev/zantiflow/blob/main/NOTICE). Apache-2.0 is permissive and
+  includes an explicit patent grant.
+- **The Zellij plugin** is also **Apache-2.0** (`apps/plugin/Cargo.toml`), consistent with the rest of
+  the repository.
+
+## Third-party dependencies
+
+The dependency tree spans three ecosystems — npm (workspace), Cargo (the plugin), and PyPI (the bots).
+The overwhelming majority are permissive (**MIT, Apache-2.0, ISC, BSD, 0BSD, Unicode-3.0, BlueOak,
+PSF, …**), which impose only one obligation: **keep the copyright and license notice** when you
+redistribute. The generated `LICENSES` file reproduces every one of those notices, so shipping that
+file satisfies the requirement.
+
+There is **no GPL, no AGPL, and no non-commercial or source-available (BSL/SSPL) license** anywhere in
+the tree. That's the important part for anyone offering a hosted service: nothing here restricts
+commercial use, and there's no network-copyleft (AGPL) trigger.
+
+### The handful that need care
+
+Every `just license` run prints a **License compliance overview** at the top of `LICENSES` that
+classifies each package and flags anything non-permissive. Today that's:
+
+| License | Packages | What it means for you |
+| --- | --- | --- |
+| **LGPL** | `mariadb` (2.1+), `@img/sharp-libvips` (3.0+) | Fine to use as an unmodified, replaceable library. `@img/sharp-libvips` **is** bundled into the `zantiflow/web` image (a ~16 MB `libvips` `.so`, pulled in by Next's image optimizer via `sharp`); its LGPL-3.0 notice ships in that image's `LICENSES`, and the `.so` stays replaceable. LGPL ≠ AGPL, so the SaaS backend has no network trigger. |
+| **MPL-2.0** (weak, file-level) | `lightningcss`, `web-push`, `certifi`, `colored`, `option-ext` | Keep the notices. You only owe source for an MPL file if **you modify that file** — using them as dependencies is obligation-free. |
+| **CC-BY-4.0** (attribution) | `caniuse-lite` | A build-time browser-support **data** table. Requires attribution, satisfied by the `LICENSES` file. |
+| **CC0-1.0** (public domain) | `mdn-data` | No obligations. |
+
+:::caution[If you fork a copyleft file]
+Using MPL/LGPL packages as dependencies is free of obligation. The obligations only bite if you
+**modify** an MPL-covered file (then that file's source must stay open) or fail to keep an LGPL library
+replaceable in a binary you distribute. zantiflow does neither.
+:::
+
+## Offering a pro tier
+
+Nothing in the dependency tree restricts a paid, tiered, or commercial offering — every license here
+permits commercial use and charging money, and there is no AGPL to complicate a hosted service. Your
+compliance obligations (attribution / notice retention) are identical whether a plan is free or pro.
+
+Note that zantiflow's **own** Apache-2.0 license is permissive, so it offers no *moat*: anyone may fork
+and re-host the project, including any pro features. That's an intentional, consistent choice here —
+see [ADR-0011 (tiers)](https://github.com/ioandev/zantiflow/blob/main/adrs) and
+[ADR-0013 (no paid subscriptions)](https://github.com/ioandev/zantiflow/blob/main/adrs); the pro tier is
+promo-code-gated and funded by GitHub Sponsors, not a protected commercial product.
+
+## Where the notices ship
+
+- **Docker images** (backend, web, bots — ADR-0021) include `LICENSE`, `NOTICE`, and the generated
+  third-party `LICENSES` at the image root.
+- **The plugin `.wasm`** (ADR-0022) ships on GitHub Releases alongside a plugin-scoped `LICENSES`
+  (its Cargo dependency closure) and `NOTICE`.
+- Regenerate all of them any time with **`just license`** — the compliance overview will re-flag any
+  copyleft or unrecognised license automatically.

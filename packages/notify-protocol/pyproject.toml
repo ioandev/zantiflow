@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=83"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "zantiflow-notify-protocol"
+version = "0.1.0"
+description = "Language-neutral backend<->bot WS protocol (pydantic models + reconnecting client) for zantiflow."
+requires-python = ">=3.11"
+dependencies = ["pydantic>=2.13", "websockets>=16.1"]
+
+[project.optional-dependencies]
+dev = ["pytest>=9.1", "pytest-asyncio>=1.4", "ruff>=0.15"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+# `integration` = real-socket, real-timing tests. Excluded from the default run (addopts below) so the
+# fast unit suite stays fast; run them explicitly with `pytest -m integration`.
+markers = [
+    "integration: real-socket / real-timing tests, excluded from the default run (use `-m integration`)",
+]
+addopts = "-m 'not integration'"
+
+[tool.ruff]
+line-length = 110

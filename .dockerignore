@@ -1,0 +1,33 @@
+# Build output & deps
+**/node_modules
+**/dist
+**/.next
+**/target
+**/__pycache__
+**/*.pyc
+
+# VCS & CI
+.git
+.github
+
+# Docs build & design assets (not needed in any service image)
+docs/dist
+design
+*.wasm
+
+# Secrets & local env — NEVER ship these in an image. The bot Dockerfiles COPY the whole app dir,
+# so without these the real apps/*/.env tokens would be baked into public images.
+**/.env
+**/.env.*
+!**/.env.example
+
+# Python virtualenvs & tool caches (bot images COPY the whole app dir)
+**/.venv
+**/venv
+**/.pytest_cache
+**/.ruff_cache
+**/.mypy_cache
+**/*.egg-info
+
+# Test files (not needed at runtime)
+**/test_*.py

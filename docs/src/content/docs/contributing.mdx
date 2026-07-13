@@ -1,0 +1,69 @@
+---
+title: Contributing
+description: How the monorepo is laid out and how to build, test, and propose changes.
+---
+
+zantiflow is a polyglot monorepo: TypeScript (backend, web, shared packages) via **pnpm**, a Rust
+plugin via **Cargo**, and Python bots via **pip**.
+
+## Layout
+
+```
+apps/       plugin (Rust)  backend (TS)  web (Next.js)  discord-bot  telegram-bot (Python)
+packages/   protocol  oauth*  notify-protocol
+docs/       this site (Starlight)
+deploy/     compose + Caddyfile + .env.example
+adrs/  FINDINGS.md  plans/
+```
+
+## Build & test
+
+```bash
+pnpm install
+pnpm -r build && pnpm -r test          # TypeScript (integration tests need Docker/Podman)
+cargo test -p zantiflow-plugin          # plugin (native) + cargo build --target wasm32-wasip1
+pytest packages/notify-protocol apps/discord-bot apps/telegram-bot   # bots
+pnpm lint && pnpm format:check          # + cargo fmt/clippy, ruff
+```
+
+## Plugin dev loop: a stable token across rebuilds
+
+Zellij namespaces each plugin's `/cache` and `/data` storage by the plugin's **URL**. The usual
+rebuild trick — bumping the wasm filename so `start-or-reload-plugin` picks up the fresh binary —
+therefore hands the plugin a brand-new, empty `/cache` every time. Device pairing persists its minted
+ingest token in `/cache`, so each filename bump wipes it and the plugin drops back to showing a
+pairing code.
+
+Skip pairing entirely by passing the token in the launch command. A config `token` is the
+plugin's top-priority source: it wins over the cached/paired token **and** short-circuits pairing, and
+because it lives in the command (not per-URL storage) it survives every path bump.
+
+```bash
+zellij action start-or-reload-plugin "file:/repos/zantiflow7.wasm" \
+    -c "token=ztf_…,server_url=http://localhost:4000,machine_name=alias:my-vm,full=true,pane_output=true"
+```
+
+Mint a local dev token against the dev DB (an infinite, revocable ingest token bound to a throwaway
+`dev/local` account):
+
+```bash
+pnpm --filter @zantiflow/backend db:up          # start the dev MariaDB (host port 3308)
+cd apps/backend
+pnpm exec prisma migrate deploy                 # first run only
+pnpm exec tsx --env-file=.env scripts/dev-mint-token.ts   # prints ztf_… on the last line
+```
+
+That token is a **dev-DB-only secret** — fine to keep in a shell alias or script on your dev box. In
+production the same `token=` slot is filled by a token you copy once from the dashboard, or you leave
+`token` out and pair via **zantiflow.com/pair** (see [Plugin: getting started](/plugin/getting-started/)).
+
+## Testing philosophy (ADR-0014)
+
+Unit + BDD + integration + Playwright, behind mockable ports. Externals (Google, Web Push,
+Discord/Telegram) are mocked; **MariaDB is real** via testcontainers. The plugin's logic is tested
+natively behind a `HostPort` trait; the real Zellij API is exercised only in a throwaway session.
+
+## Proposing changes
+
+If your change involves a **decision** the existing [ADRs](/adrs/) don't settle, add a new
+ADR alongside the code. One decision, one ADR.

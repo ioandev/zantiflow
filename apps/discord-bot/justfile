@@ -1,0 +1,24 @@
+# zantiflow Discord bot — dev tasks. Run `just` to list.
+# `just dev` runs the bot and auto-restarts it when this app OR the shared
+# notify-protocol package changes (watches .py only; ignores .venv/__pycache__).
+
+python := ".venv/bin/python"
+
+# List available recipes.
+default:
+    @just --list
+
+# Create the local venv and install deps (incl. dev tools like watchfiles).
+setup:
+    python -m venv .venv
+    {{python}} -m pip install -U pip
+    {{python}} -m pip install -r requirements.txt
+
+# Run the bot once (no auto-reload).
+run:
+    {{python}} bot.py
+
+# Run with auto-restart on changes to this app + the shared protocol package.
+dev:
+    {{python}} -m watchfiles --filter python --target-type command \
+        "{{python}} bot.py" . ../../packages/notify-protocol/src

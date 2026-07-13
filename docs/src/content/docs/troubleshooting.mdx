@@ -1,0 +1,270 @@
+---
+title: Troubleshooting
+description: Diagnose why data, attentions, notifications, or pane output aren't showing up — and fix it.
+---
+
+import { Aside, Steps } from '@astrojs/starlight/components'
+
+Most problems fall into one of a few buckets: the plugin isn't sending, the backend is rejecting what
+it sends, or a downstream feature (attentions, notifications, pane output) is gated off by design.
+This page is organised by **what you see**. Start with the diagnostics below — they answer 90% of
+"nothing is happening" reports in under a minute.
+
+## First: read the two status surfaces
+
+Before changing anything, look at the two places the plugin already tells you what it's doing.
+
+<Steps>
+
+1. **The plugin pane.** Open the pane running `zantiflow.wasm`. It renders one of:
+   - `zantiflow ✓ paired — reporting telemetry (change-driven).` — the plugin has a token and is
+     sending. The problem is downstream (backend, network, or a feature gate).
+   - `zantiflow — pair this device` + a code — the plugin has **no token** and is waiting for you to
+     approve it on the website. See [No token, and pairing hasn't finished](#no-token-and-pairing-hasnt-finished).
+   - `Waiting for Zellij permissions…` — permissions haven't been granted. See
+     [The plugin isn't sending anything](#the-plugin-isnt-sending-anything).
+
+2. **The Zellij log.** The plugin logs every meaningful event (and every config warning) with a
+   `[zantiflow]` prefix to Zellij's log file:
+
+   ```bash
+   # Linux; $UID is your numeric user id (e.g. 1000)
+   tail -f /tmp/zellij-$UID/zellij-log/zellij.log | grep zantiflow
+   ```
+
+   Lines like `ingest returned status 401`, `permissions denied — telemetry disabled`, or
+   `invalid server_url '…'` point straight at the cause. Secrets and pane content are **never**
+   logged.
+
+</Steps>
+
+<Aside type="tip">
+The plugin log is the single most useful diagnostic. Keep the `tail -f … | grep zantiflow` running in
+a spare pane while you reproduce the problem.
+</Aside>
+
+## The plugin isn't sending anything
+
+The dashboard shows no machine, or a machine that never updates. Work down this list — the order
+matches how often each one is the culprit.
+
+### Permissions were never granted
+
+On first load the plugin requests three base permissions: **read application state**, **web access**,
+and **read pane contents**. Until all three are granted it renders `Waiting for Zellij permissions…`
+and sends nothing.
+
+- Grant them in the plugin pane when Zellij prompts.
+- If you **denied** them, the grant is cached in `~/.cache/zellij/permissions.kdl`, so you won't be
+  asked again. Remove zantiflow's entry from that file (or delete the file) and reload the plugin to
+  get the prompt back.
+- A log line `permissions denied — telemetry disabled` confirms this is the problem.
+
+<Aside type="caution">
+A **fourth** permission, **run commands**, is requested *lazily* and only when you opt into the real
+hostname (`hostname on` + `machine_name real`). Denying it does **not** disable telemetry — the
+machine just reports as `<hidden>`. See [Machine name](#machine-name-is-wrong-or-hidden).
+</Aside>
+
+### No token, and pairing hasn't finished
+
+If you didn't set `token` in the config, the plugin uses [device pairing](/plugin/getting-started/#3-pair-a-device-no-token)
+and sends nothing until you approve it. The pane shows a code. If you *did* set a token but still see
+the pairing screen, the token is empty/whitespace — the plugin treats that as "no token". Paste the
+full `ztf_…` secret from the dashboard's **Tokens** page (it's shown only once at creation).
+
+### The token is wrong, expired, or revoked
+
+If the pane says it's paired but the dashboard still shows nothing, the backend is rejecting the
+token. Look for `ingest returned status 401` (bad/unknown token) or `403` in the log.
+
+- Tokens are shown **once**. If you lost it, create a new one and update the config.
+- Tokens can be set to expire. An expired or revoked token → `401`. Mint a fresh one.
+- Confirm you pasted the token for the **right account** and there's no trailing space.
+
+### `server_url` is wrong or not HTTPS
+
+`server_url` is **optional** — omit it to use the hosted service (`https://zantiflow.com`). Only set
+it when self-hosting. It must be `https://` (plain `http://` is allowed **only** for `localhost` /
+`127.0.0.1` / `[::1]`).
+
+- A bad value logs `invalid server_url '…' — must be https:// (or http://localhost)` and the request
+  will fail. Fix the scheme.
+- Self-hosting behind Caddy? Point `server_url` at your public HTTPS origin, not the internal
+  `http://backend:4000`.
+
+### Outbound web requests are blocked
+
+The plugin sends via Zellij's `web_request`. If your Zellij build disallows web access, or a
+firewall/proxy blocks the egress, requests silently never arrive. Test the endpoint from the same
+machine:
+
+```bash
+curl -sS -i https://zantiflow.com/api/v1/ingest -X POST \
+  -H 'Authorization: Bearer ztf_…' -H 'Content-Type: application/json' -d '{}'
+```
+
+A `4xx` (not a connection error) means the network path works and the token/URL are the real issue.
+
+### Zellij and the plugin disagree on version
+
+The plugin pins `zellij-tile` to an exact Zellij version (currently **0.44.3**). Because Zellij's
+event/permission enums are `#[non_exhaustive]` and still evolving, a `.wasm` built against a different
+Zellij can fail to load, miss events, or misparse permissions. Match your Zellij version to the
+release's pinned version, or [build the plugin yourself](#building-the-plugin-from-source) against
+your Zellij.
+
+## Names show as `<hidden>` when you didn't intend it
+
+`<hidden>` means the plugin **redacted** the value before sending — it's a privacy decision, not a
+bug. `Unknown` is different: it means "no update seen yet". If everything is `<hidden>`:
+
+- Check the log for `failing closed` warnings. Privacy is **Model A / fail-closed**: an invalid value
+  for `full`, `machine_name`, `session_names`, `tab_names`, or `pane_names` redacts and warns rather
+  than leaking. For example `invalid session_names 'send ' — failing closed to hidden` (note a typo or
+  stray value).
+- `full false` redacts **everything** as the baseline; per-field `send` overrides win. If you set
+  `full false` and forgot the overrides, that's why.
+- Valid name values are exactly `send` or `hidden`. Valid `machine_name` values are `real`,
+  `alias:<text>`, or `hidden` (`alias:` with no text fails closed to hidden).
+
+See [Privacy](/privacy/) for the full model.
+
+## Machine name is wrong or `<hidden>`
+
+The real hostname is **opt-in and off by default** (ADR-0024). To send it you need **both**
+`machine_name real` **and** `hostname on`:
+
+- `machine_name real` alone logs `machine_name=real but hostname=off — the real hostname is NOT
+  sent…` and the machine reports as `<hidden>`. Add `hostname on`.
+- With both set, the plugin lazily requests the **run commands** permission and runs `hostname`. If
+  you deny it, the log shows `RunCommands permission denied — machine reports as hidden (hostname not
+  sent)` — telemetry keeps working, only the name is hidden. Re-grant via
+  `~/.cache/zellij/permissions.kdl` (see above) if you want it.
+- Prefer not to touch permissions? Use `machine_name "alias:my-laptop"` — no extra permission, and
+  you control the label.
+
+## Attentions don't fire (or fire at the wrong time)
+
+Attentions have two halves: the **plugin detects** a state; the **backend enforces** the timing. If
+nothing shows up:
+
+- **Thresholds are tier-based and server-side.** An attention must stay active past the threshold —
+  **5 min on free, 1 min on PRO** — before it fires. Nothing you set on the plugin changes this.
+- **`claude.thinking`** only triggers when a `claude` pane's visible tail shows **both** a `Gerund…`
+  spinner (e.g. `Swooping…`) **and** a status anchor (`esc to interrupt` / `still thinking with
+  <effort> effort`). Prose that merely contains a gerund won't trigger it. An explicit input prompt
+  takes precedence (needs-input wins). A Claude pane is recognised by its **pane name** marker (the
+  `✳`/spinner), not the tab name or command — if the pane name is redacted, detection still runs
+  locally but relies on the marker being visible in the tail.
+- **`claude.idle`** and **`machine.offline`** are computed **on the backend**, not the plugin, by a
+  ~20 s sweep. `claude.idle` needs *every* Claude pane on the machine quiet past the threshold;
+  `machine.offline` fires once when a machine stops reporting for >60 s. Both are **excluded from the
+  "needs attention" count** by design.
+- `session.detached` was **removed** — a detached Zellij session is normal usage and the backend
+  filters it out. Don't expect an alert for it.
+
+## Pane output is empty, colourless, or stuck on "pending"
+
+Pane output is a **separate, opt-in, on-demand** channel — it is never part of the per-second ingest.
+
+- **Nothing to open / "output not shared":** `pane_output` is **OFF by default**. Set
+  `pane_output true` in the plugin config (it can change live, no restart). Content otherwise never
+  leaves your machine.
+- **Output shows but has no colour:** colour is captured from Zellij's ANSI render reports, which the
+  plugin only subscribes to while `pane_output` is on. A pane that hasn't redrawn since you enabled it
+  falls back to plain (colourless) scrollback. Interact with the pane (or wait for it to repaint) and
+  reopen.
+- **Stuck on "pending":** the dashboard registers a request and waits for a *fresh* capture for that
+  request — it never serves stale content. The plugin fulfils it on its control poll. With long-poll
+  on (the default) this is ≈1 s; if the request seems dropped, reload the pane drawer. If it never
+  fulfils, the plugin likely isn't sharing output (see the first bullet) or lost its network path.
+- **Latency feels slow (up to ~5 s):** long-poll self-degrades to a ~1 s poll on hosts that hold the
+  request, but a host that *silently drops* held requests regresses to the ~5 s fixed poll plus a
+  watchdog. Set `control_long_poll off` to force the predictable fixed ~5 s poll.
+- **`<hidden>` or masked lines in the output:** that's [secret scrubbing](/privacy/#on-demand-pane-output)
+  working — known secret shapes are masked in the plugin before sending. Expected, not a bug.
+
+## Notifications never arrive
+
+<Steps>
+
+1. **Confirm the attention actually fired** (see [above](#attentions-dont-fire-or-fire-at-the-wrong-time)).
+   No attention → no notification. Nothing is delivered until an attention clears its tier threshold.
+
+2. **Web Push (everyone):** you must grant browser notification permission *and* subscribe via the
+   dashboard button. On **iOS, Web Push only works from an installed PWA** — add the dashboard to your
+   home screen first. If you previously blocked notifications, unblock the site in browser settings and
+   re-subscribe. Notifications are deliberately **name-free** (they say a session needs you, never
+   which one) — that's by design.
+
+3. **Discord / Telegram DMs (PRO only):** free accounts can't link chat. If you're PRO and DMs don't
+   arrive:
+   - Re-check linking: mint a one-time link token on the **Integrations** page, then DM the bot
+     `/link <token>` (Telegram also accepts the `?start=<token>` deep link). Link tokens are
+     single-use.
+   - If the bot was offline, deliveries **queue and flush on reconnect** — they're durable and
+     idempotent, so you'll get them late, not never.
+   - Make sure you haven't blocked the bot or disabled DMs from server members (Discord).
+
+</Steps>
+
+## The dashboard is blank, stale, or won't sign in
+
+- **Tree doesn't update live:** the dashboard streams over **SSE** (`/api/v1/stream`). A proxy that
+  buffers responses will break it — ensure your reverse proxy doesn't buffer `text/event-stream`
+  (the example Caddyfile is already correct). A machine with data that just isn't *fresh* is a plugin
+  problem, not a dashboard one.
+- **`Unknown` everywhere:** the account has no snapshot yet — the plugin hasn't successfully ingested.
+  Go back to [The plugin isn't sending anything](#the-plugin-isnt-sending-anything).
+- **Signed out unexpectedly / "log out everywhere":** sessions re-check the DB and a `sessionEpoch`
+  on every request, so revoking sessions is instant. Just sign in again with Google.
+- **CORS / cookie errors in the console (self-host):** the API only accepts credentialed calls from
+  the exact `WEB_ORIGIN`. The web tier proxies `/api/v1` to the backend on the **same origin**, so
+  the browser only ever talks to one host — if you're calling the backend cross-origin directly, route
+  through the web proxy instead. Cookies need `COOKIE_SECURE=1` under HTTPS.
+- **Promo code won't redeem:** codes grant one month of PRO, are rate-limited, and `tierExpiresAt` is
+  capped (~60 days) — a code that pushes you past the cap, or too many attempts, is rejected.
+
+## Self-hosting: deploy problems
+
+- **Backend won't start / DB errors:** the backend entrypoint runs `prisma migrate deploy` before
+  serving. A failure usually means `DATABASE_URL` is wrong or MariaDB isn't ready. Confirm the URL
+  host is the `mariadb` service name and the password matches `DB_PASSWORD`.
+- **Is it up?** hit the health endpoints: `/healthz` (liveness) and `/readyz` (ready, i.e. DB
+  reachable). `/readyz` failing points at the database.
+- **TLS / mixed-content:** Caddy terminates TLS and sets the security headers/CSP. The plugin refuses
+  non-HTTPS `server_url` (except localhost), so a self-signed or missing cert means the plugin can't
+  reach you. Use a real cert (Caddy does this automatically for a public domain).
+- **Missing env / secrets:** copy `deploy/.env.example` to `.env` and fill **every** `CHANGE_ME`
+  (`TOKEN_SECRET`, `DB_PASSWORD`, Google OAuth, VAPID keys for Web Push, bot secrets if enabled).
+  `.env` is never committed.
+- **Bots don't connect:** the bots dial an **outbound** WebSocket to the backend (`BACKEND_WS_URL`,
+  e.g. `wss://…/internal/bots`) authenticated with `BOT_SERVICE_SECRET`. They need no public ingress —
+  if they can't connect, check that secret and URL, not your firewall's inbound rules.
+
+## Building the plugin from source
+
+```bash
+rustup target add wasm32-wasip1   # once
+cargo build -p zantiflow-plugin --target wasm32-wasip1 --release
+# → target/wasm32-wasip1/release/zantiflow_plugin.wasm
+cargo test -p zantiflow-plugin    # unit tests (no Zellij needed)
+```
+
+- **`error: target 'wasm32-wasip1' not installed`:** run the `rustup target add` line above.
+- **Plugin loads but behaves oddly:** you may have built against a different `zellij-tile` than your
+  running Zellij. Keep them in lockstep (see [version mismatch](#zellij-and-the-plugin-disagree-on-version)).
+- **Backend/web/packages tests fail with a container error:** the integration tests use **real
+  MariaDB** via testcontainers. On Podman hosts, make sure the Podman socket is running and
+  `TESTCONTAINERS_*`/`DOCKER_HOST` point at it. Pure unit tests (`pnpm -r test` for `packages/*`) need
+  no containers.
+
+## Still stuck?
+
+Open an issue on [GitHub](https://github.com/ioandev/zantiflow) with:
+
+- The relevant `[zantiflow]` log lines (`grep zantiflow` on the Zellij log — they contain no secrets).
+- Your plugin config **with the token redacted**.
+- Your Zellij version and, if self-hosting, backend version and deploy method.
+- What you saw in the plugin pane and the dashboard.

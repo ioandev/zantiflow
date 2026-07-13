@@ -1,0 +1,54 @@
+name: Plugin release
+
+# ADR-0022: the Zellij plugin is NOT a Docker image — the compiled `zantiflow.wasm` (arch-independent)
+# is attached to the GitHub Release with a SHA-256 checksum. Fires on the same published Release that
+# triggers docker-publish.yml, so one Release ships the images and the plugin together.
+on:
+  release:
+    types: [published]
+
+concurrency:
+  group: plugin-release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write # upload assets onto the Release
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }} # build the exact released commit
+
+      # Match the pin in rust-toolchain.toml (1.96.1) + the wasm target, so the cross-compile is explicit.
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "1.96.1"
+          targets: wasm32-wasip1
+
+      - name: Test plugin (release gate)
+        run: cargo test --all
+
+      - name: Build plugin (release, wasm32-wasip1)
+        run: cargo build --release --target wasm32-wasip1 -p zantiflow-plugin
+
+      - name: Package artifact + SHA-256 checksum
+        run: |
+          cp target/wasm32-wasip1/release/zantiflow_plugin.wasm zantiflow.wasm
+          sha256sum zantiflow.wasm > zantiflow.wasm.sha256
+          cat zantiflow.wasm.sha256
+
+      # ADR-0022: ship third-party attribution with the artifact. Plugin scope = only the Cargo
+      # closure compiled into the .wasm (no pnpm/venv needed); the registry cache is warm from the
+      # build above. Regenerated here so it always matches the exact released crates.
+      - name: Generate third-party LICENSES (plugin scope)
+        run: node scripts/generate-licenses.mjs --scope plugin --out zantiflow.wasm.LICENSES
+
+      - name: Attach to the Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "${{ github.event.release.tag_name }}" \
+            zantiflow.wasm zantiflow.wasm.sha256 zantiflow.wasm.LICENSES LICENSE NOTICE --clobber
