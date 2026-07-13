@@ -3,3 +3,7 @@
 [toolchain]
 channel = "1.96.1"
 targets = ["wasm32-wasip1"]
+# rustfmt + clippy so `cargo fmt`/`cargo clippy` work under this pin. Without these, rustup
+# materialises the pinned toolchain without them and CI fails ("'cargo-fmt' is not installed
+# for the toolchain '1.96.1'") — the pin overrides any workflow-installed stable components.
+components = ["rustfmt", "clippy"]

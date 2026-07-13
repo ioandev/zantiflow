@@ -4,6 +4,7 @@
 // per-package `tsc` build is the type-checker. Rust/Python have their own linters (CI).
 import js from '@eslint/js'
 import tseslint from 'typescript-eslint'
+import next from '@next/eslint-plugin-next'
 import prettier from 'eslint-config-prettier'
 
 export default tseslint.config(
@@ -31,6 +32,20 @@ export default tseslint.config(
     rules: {
       // Allow intentionally-unused args/vars when prefixed with `_` (e.g. ignored callback params).
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+    },
+  },
+  {
+    // Next.js app: load the official plugin so its rules (and inline
+    // `@next/next/*` disable directives, e.g. next/og <img> in lib/og.tsx) resolve.
+    // Mirrors `next lint`: recommended + core-web-vitals.
+    files: ['apps/web/**/*.{ts,tsx}'],
+    plugins: { '@next/next': next },
+    rules: {
+      ...next.configs.recommended.rules,
+      ...next.configs['core-web-vitals'].rules,
+      // App Router only (apps/web/app) — this rule targets the legacy pages/ dir and
+      // otherwise warns "Pages directory cannot be found" on every run.
+      '@next/next/no-html-link-for-pages': 'off',
     },
   },
   {

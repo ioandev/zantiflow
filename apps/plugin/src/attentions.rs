@@ -155,7 +155,9 @@ mod tests {
         // freshness check, not this marker, is what stops a frozen one reading as "thinking".
         assert!(is_thinking_marker("⠂ bug-tile-not-updated"));
         // Leading and/or padding whitespace around the dot is tolerated ("space before or after").
-        assert!(is_thinking_marker("  ⠐  Implement homepage from design file"));
+        assert!(is_thinking_marker(
+            "  ⠐  Implement homepage from design file"
+        ));
         // A spinner frame with no task text after it still counts.
         assert!(is_thinking_marker("⠙"));
     }

@@ -440,7 +440,8 @@ mod tests {
         let s1 = build_snapshot(&host, &base_config(), "m-1", "salt", 1, 1, &mut act);
         assert!(!s1.attentions.iter().any(|a| a.kind == "claude.thinking"));
         // Tick 2: output changed (a live turn) → fresh → thinking fires, targeting the pane.
-        host.scrollback.insert(7, "· Swooping…\nline 1\nline 2".into());
+        host.scrollback
+            .insert(7, "· Swooping…\nline 1\nline 2".into());
         let s2 = build_snapshot(&host, &base_config(), "m-1", "salt", 2, 2, &mut act);
         let think = s2
             .attentions
@@ -481,7 +482,10 @@ mod tests {
         // Output settles (Claude finished). Past the stale window the attention clears — a structural
         // change the send-gate pushes — even though the frozen spinner glyph never changed.
         let settled = build_snapshot(&host, &base_config(), "m-1", "salt", 20, 20, &mut act);
-        assert!(!settled.attentions.iter().any(|a| a.kind == "claude.thinking"));
+        assert!(!settled
+            .attentions
+            .iter()
+            .any(|a| a.kind == "claude.thinking"));
     }
 
     #[test]

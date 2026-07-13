@@ -586,7 +586,10 @@ impl ZellijPlugin for ZantiflowPlugin {
     fn load(&mut self, configuration: BTreeMap<String, String>) {
         // Build identity — the crate version this .wasm was compiled from (ADR-0022). Logged so the
         // Zellij plugin log shows which version is running, matching the backend/web/bot startup logs.
-        self.host.log(&format!("zantiflow plugin v{} loading", env!("CARGO_PKG_VERSION")));
+        self.host.log(&format!(
+            "zantiflow plugin v{} loading",
+            env!("CARGO_PKG_VERSION")
+        ));
         // Least-privilege base set: session/pane state, outbound HTTP, scrollback. `RunCommands`
         // (for the hostname lookup) is deliberately NOT here — it's requested lazily only when the
         // opt-in `hostname` feature is on, so alias/hidden users never see that prompt (ADR-0024).

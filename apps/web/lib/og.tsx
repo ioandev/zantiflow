@@ -39,6 +39,7 @@ export function renderOgImage() {
       >
         {/* Brand row */}
         <div style={{ display: 'flex', alignItems: 'center' }}>
+          {/* satori (next/og) renders raw <img>; next/image is not applicable here */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={ICON_URI} width={76} height={76} alt="" />
           <div style={{ display: 'flex', marginLeft: 26, fontSize: 46, fontWeight: 600, letterSpacing: -1 }}>
