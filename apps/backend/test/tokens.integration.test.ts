@@ -134,7 +134,10 @@ suite('tokens integration (testcontainers MariaDB)', () => {
     const b = await newAccount()
     const mint = await request(app).post('/api/v1/tokens').set('Cookie', a.cookie).send({ label: 'a-token' })
 
-    const attempt = await request(app).patch(`/api/v1/tokens/${mint.body.id}`).set('Cookie', b.cookie).send({ label: 'hijack' })
+    const attempt = await request(app)
+      .patch(`/api/v1/tokens/${mint.body.id}`)
+      .set('Cookie', b.cookie)
+      .send({ label: 'hijack' })
     expect(attempt.status).toBe(404)
 
     // A's label is unchanged.
@@ -147,7 +150,10 @@ suite('tokens integration (testcontainers MariaDB)', () => {
     const b = await newAccount()
     const secrets: string[] = []
     for (let i = 0; i < 3; i++) {
-      const m = await request(app).post('/api/v1/tokens').set('Cookie', a.cookie).send({ label: `t${i}` })
+      const m = await request(app)
+        .post('/api/v1/tokens')
+        .set('Cookie', a.cookie)
+        .send({ label: `t${i}` })
       secrets.push(m.body.secret)
     }
     // B has its own token that must survive A's bulk revoke.

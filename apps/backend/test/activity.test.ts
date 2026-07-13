@@ -23,7 +23,16 @@ const snap = (panes: ReturnType<typeof pane>[]): SnapshotV4 =>
     privacy: { full: true, machine: 'real', sessionNames: 'send', tabNames: 'send', paneNames: 'send' },
     machine: { source: 'real', name: 'host' },
     attentions: [],
-    sessions: [{ sid: 's1', name: 'main', isCurrent: true, state: 'live', diedSecondsAgo: null, tabs: [{ tabId: 0, name: 't', position: 0, active: true, panes }] }],
+    sessions: [
+      {
+        sid: 's1',
+        name: 'main',
+        isCurrent: true,
+        state: 'live',
+        diedSecondsAgo: null,
+        tabs: [{ tabId: 0, name: 't', position: 0, active: true, panes }],
+      },
+    ],
   }) as SnapshotV4
 
 const t1 = new Date('2026-07-11T00:00:01Z')

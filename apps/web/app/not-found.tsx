@@ -15,8 +15,8 @@ export default function NotFound() {
   return (
     <ErrorShell code="404" title="This page wandered off.">
       <p className="nf-lede">
-        The link may be broken, or the page may have moved. No session, tab, or pane lives here — try
-        one of these instead.
+        The link may be broken, or the page may have moved. No session, tab, or pane lives here — try one of these
+        instead.
       </p>
 
       {/* Decorative echo of the product's session → tab → pane tree. */}

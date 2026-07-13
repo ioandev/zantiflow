@@ -3,7 +3,15 @@
 // which is visually distinct from a machine/pane that has simply reported nothing yet.
 import type { ReactNode } from 'react'
 
-export function Name({ value, className, hiddenText = '<hidden>' }: { value: string | null; className?: string; hiddenText?: string }) {
+export function Name({
+  value,
+  className,
+  hiddenText = '<hidden>',
+}: {
+  value: string | null
+  className?: string
+  hiddenText?: string
+}) {
   if (value === null) return <span className={`hidden ${className ?? ''}`}>{hiddenText}</span>
   return <span className={className}>{value}</span>
 }

@@ -291,3 +291,26 @@ console render survives only as an optional dev/debug view; the read API + websi
   behind mockable ports. Externals mocked (Zellij host via `HostPort`, Google, web-push,
   Discord/Telegram); **MariaDB is real** (testcontainers). `cargo test` (plugin) · `vitest` +
   `supertest` + `@playwright/test` (TS) · `pytest` + `pytest-bdd` (bots). Every feature lands with tests.
+
+### CI parity — run these locally before pushing (they gate the pipelines)
+
+The GitHub Actions (`.github/workflows/{ci,tests,docker-publish,plugin-release}.yml`) fail the build on
+any of the checks below. **After touching TS/JS or Rust, run the matching checks and make them green
+before committing/pushing** — CI is not the place to discover a formatting/lint miss.
+
+- **TS/JS (any change under `apps/*` or `packages/*`):**
+  - `pnpm lint` — ESLint (`eslint .`). Flat config is `eslint.config.mjs`; the Next app pulls in
+    `@next/eslint-plugin-next` (scoped to `apps/web/**`). An `eslint-disable` for an **unregistered**
+    rule is a *hard error* ("Definition for rule … was not found"), not a no-op.
+  - `pnpm format:check` — Prettier (`prettier --check .`). Fix with `pnpm format`. Prettier owns
+    formatting; ESLint does not (`eslint-config-prettier` disables stylistic rules).
+  - `pnpm -r build` (tsc) and `pnpm -r test` (vitest).
+- **Rust (`apps/plugin`):** `cargo fmt --all --check` · `cargo clippy --all-targets --all-features -- -D warnings`
+  · `cargo test --all`. `rust-toolchain.toml` must declare `components = ["rustfmt", "clippy"]` — the
+  pin **overrides** any workflow-installed stable components, so without this the pinned toolchain has
+  no `cargo-fmt`/`cargo-clippy` and CI dies before formatting is even checked.
+- **Python (bots, once scaffolded):** `ruff check` · `pytest`.
+- **Toolchain versions (keep CI green, avoid deprecation warns):** Node floor is **≥22.13** (pnpm@11.10
+  needs `node:sqlite`; also set in root `engines` + the `test` matrix `[22, 24]`) — node 20 is EOL and
+  cannot even run the toolchain. GitHub Actions must be **node24 majors**: `actions/checkout@v7`,
+  `actions/setup-node@v6`, `pnpm/action-setup@v6`.

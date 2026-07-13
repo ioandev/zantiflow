@@ -3,7 +3,11 @@
 // These keep the entry field forgiving: users can paste with or without the dash, in any case.
 
 /** Strip to A–Z0–9, uppercase, cap at the 8 significant characters (drops the dash/spaces). */
-export const stripUserCode = (input: string): string => input.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8)
+export const stripUserCode = (input: string): string =>
+  input
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '')
+    .slice(0, 8)
 
 /** Format for display in the input: `XXXX-XXXX` once past 4 characters. */
 export const formatUserCode = (input: string): string => {

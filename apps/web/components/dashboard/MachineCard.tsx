@@ -18,7 +18,9 @@ export function MachineCard({ m, onOpen }: { m: MachineSummary; onOpen: () => vo
       <div className="mcard-top">
         <Dot kind={stale ? 'stale' : 'live'} />
         <span className={`mcard-name${hidden ? ' hidden' : ''}`}>{hidden ? '<machine hidden>' : m.displayName}</span>
-        <span style={{ marginLeft: 'auto' }}>{stale ? <Pill kind="stale">stale</Pill> : <Pill kind="live">live</Pill>}</span>
+        <span style={{ marginLeft: 'auto' }}>
+          {stale ? <Pill kind="stale">stale</Pill> : <Pill kind="live">live</Pill>}
+        </span>
       </div>
 
       {m.privacy && (

@@ -29,10 +29,7 @@ describe('AttentionIndex', () => {
   })
 
   it('tracks thinking separately and keeps it out of the needs-attention count', () => {
-    const idx = new AttentionIndex([
-      attn('s1:0:7', 'claude.thinking'),
-      attn('s1:1:3', 'claude.needs-input'),
-    ])
+    const idx = new AttentionIndex([attn('s1:0:7', 'claude.thinking'), attn('s1:1:3', 'claude.needs-input')])
     // The thinking pane is "thinking", not "needs attention".
     expect(idx.paneThinking('s1', 0, 7)).toBe(true)
     expect(idx.paneNeedsAttention('s1', 0, 7)).toBe(false)

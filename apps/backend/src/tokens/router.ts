@@ -79,7 +79,12 @@ export const createTokensRouter = (prisma: PrismaClient, config: Config, outputS
   router.delete(
     '/:id',
     asyncHandler(async (req, res) => {
-      const { forgotten } = await revokeTokenAndForgetMachines(prisma, outputStore, req.account!.id, String(req.params.id))
+      const { forgotten } = await revokeTokenAndForgetMachines(
+        prisma,
+        outputStore,
+        req.account!.id,
+        String(req.params.id),
+      )
       res.json({ forgotten })
     }),
   )

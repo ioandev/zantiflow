@@ -75,9 +75,11 @@ describe('paneActivity — the design activity column', () => {
     })
   })
   it('thinking when claude is busy, taking precedence over needs-attention', () => {
-    expect(paneActivity({ updatedAt: ago(3), needsAttention: false, thinking: true, exited: false, now: NOW })).toEqual({
-      kind: 'thinking',
-    })
+    expect(paneActivity({ updatedAt: ago(3), needsAttention: false, thinking: true, exited: false, now: NOW })).toEqual(
+      {
+        kind: 'thinking',
+      },
+    )
     // If both were somehow set, "busy" wins over "waiting".
     expect(paneActivity({ updatedAt: ago(3), needsAttention: true, thinking: true, exited: false, now: NOW })).toEqual({
       kind: 'thinking',

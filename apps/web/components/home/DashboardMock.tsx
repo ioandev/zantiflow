@@ -51,7 +51,8 @@ export function DashboardMock() {
             <span className="hp-mock-pcmd">cargo watch -x check</span>
             <span className="hp-mock-pflags">
               <span className="hp-mock-fresh">
-                <span className="d" />3s ago
+                <span className="d" />
+                3s ago
               </span>
             </span>
           </div>

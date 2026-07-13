@@ -29,13 +29,7 @@ const css = `
   }
 `
 
-export default function GlobalError({
-  error,
-  reset,
-}: {
-  error: Error & { digest?: string }
-  reset: () => void
-}) {
+export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   return (
     <html lang="en">
       <body>
@@ -46,8 +40,7 @@ export default function GlobalError({
             <p className="ge-code">500</p>
             <h1 className="ge-title">Something went wrong.</h1>
             <p className="ge-lede">
-              The app hit an unexpected error and couldn&rsquo;t finish loading. Reloading usually fixes
-              it.
+              The app hit an unexpected error and couldn&rsquo;t finish loading. Reloading usually fixes it.
             </p>
             <div className="ge-actions">
               <button type="button" className="ge-btn" onClick={reset}>

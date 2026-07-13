@@ -76,7 +76,15 @@ function DangerAction({
 /** One machine row: status dot, name + machineId, when added / last seen, and an inline-confirm Kick.
  * The machineId is the plugin-generated id (persisted in the plugin's /data) — shown so the owner can
  * match a row to a specific install; `user-select: all` (CSS) makes it one-click copyable. */
-function MachineRow({ m, disabled, onKick }: { m: MachineSummary; disabled: boolean; onKick: () => void | Promise<void> }) {
+function MachineRow({
+  m,
+  disabled,
+  onKick,
+}: {
+  m: MachineSummary
+  disabled: boolean
+  onKick: () => void | Promise<void>
+}) {
   return (
     <div className="mrow">
       <Dot kind={m.online ? 'live' : 'stale'} />
@@ -343,9 +351,12 @@ export default function Tokens() {
               you no longer use.
             </p>
             <div className="tok-machines">
-              {unlinked.slice().sort(byLastSeenDesc).map((m) => (
-                <MachineRow key={m.id} m={m} disabled={busy} onKick={() => onKick(m)} />
-              ))}
+              {unlinked
+                .slice()
+                .sort(byLastSeenDesc)
+                .map((m) => (
+                  <MachineRow key={m.id} m={m} disabled={busy} onKick={() => onKick(m)} />
+                ))}
             </div>
           </section>
         )}

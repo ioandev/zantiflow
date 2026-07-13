@@ -100,8 +100,8 @@ export function MachineDetail({
 
       {stale && (
         <div className="stale-banner">
-          Showing the last snapshot received, {lastSeenLabel(detail.lastSeenAt, now)}. The plugin is fire-and-forget — this
-          could be a closed laptop or a network gap; the data can’t tell which.
+          Showing the last snapshot received, {lastSeenLabel(detail.lastSeenAt, now)}. The plugin is fire-and-forget —
+          this could be a closed laptop or a network gap; the data can’t tell which.
         </div>
       )}
 

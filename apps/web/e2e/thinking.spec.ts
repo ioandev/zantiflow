@@ -22,7 +22,14 @@ test.describe('claude.thinking indicator (opt-in)', () => {
     // pane (targetKey = sid:tabId:paneId), plus the machine-summary count that drives the card badge.
     const nowIso = new Date().toISOString()
     state.attentions = [
-      { id: 'attn_think', machineId: id, type: 'claude.thinking', targetKey: 's1:1:1', activeSince: nowIso, lastFiredAt: nowIso },
+      {
+        id: 'attn_think',
+        machineId: id,
+        type: 'claude.thinking',
+        targetKey: 's1:1:1',
+        activeSince: nowIso,
+        lastFiredAt: nowIso,
+      },
     ]
     state.machines[0].thinkingCount = 1
     await installApiMocks(page, state)

@@ -18,8 +18,8 @@ export function Privacy() {
         <div className="hp-card">
           <span className="hp-card-h">Nothing is stored.</span>
           <span className="hp-card-body">
-            The backend keeps only the latest snapshot per machine and current attentions — no history. Notifications are
-            pruned after a few hours.
+            The backend keeps only the latest snapshot per machine and current attentions — no history. Notifications
+            are pruned after a few hours.
           </span>
         </div>
         <div className="hp-card">

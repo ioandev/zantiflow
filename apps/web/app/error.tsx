@@ -18,8 +18,8 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
   return (
     <ErrorShell code="500" title="Something went wrong.">
       <p className="nf-lede">
-        An unexpected error interrupted this page — it's almost certainly not you. Trying again often
-        clears it; if it keeps happening, reporting it on GitHub helps.
+        An unexpected error interrupted this page — it's almost certainly not you. Trying again often clears it; if it
+        keeps happening, reporting it on GitHub helps.
       </p>
 
       <div className="nf-actions">
