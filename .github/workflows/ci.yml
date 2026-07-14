@@ -29,7 +29,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        service: [backend, web, discord-bot, telegram-bot, docs]
+        service: [backend, web, plugin-dist, discord-bot, telegram-bot, docs]
     steps:
       - uses: actions/checkout@v7
       - uses: docker/setup-buildx-action@v3

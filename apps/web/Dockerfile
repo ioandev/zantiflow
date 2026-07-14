@@ -10,7 +10,12 @@ RUN pnpm install --frozen-lockfile
 # GIT_SHA doesn't bust the dependency layer; `next build` inlines these into the bundle.
 ARG APP_VERSION=dev
 ARG GIT_SHA=unknown
-ENV APP_VERSION=${APP_VERSION} GIT_SHA=${GIT_SHA}
+# `next build` bakes the /api/v1 → backend rewrite destination into routes-manifest.json at BUILD time
+# (Next evaluates next.config `rewrites()` during build, not at server start), so BACKEND_URL must be
+# set HERE — a runtime env in docker-compose is read too late and has no effect. Default to the compose
+# service name used by deploy/docker-compose.example.yml; override with --build-arg for other topologies.
+ARG BACKEND_URL=http://backend:4000
+ENV APP_VERSION=${APP_VERSION} GIT_SHA=${GIT_SHA} BACKEND_URL=${BACKEND_URL}
 RUN pnpm --filter @zantiflow/web build
 
 FROM node:22-slim AS runtime

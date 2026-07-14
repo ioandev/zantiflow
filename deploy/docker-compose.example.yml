@@ -49,7 +49,11 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: production
-      BACKEND_URL: http://backend:4000      # the web tier proxies /api/v1 → backend (ADR-0018 §8)
+      # NOTE: BACKEND_URL is baked into the image at BUILD time (next.config `rewrites()` is evaluated
+      # by `next build`, not at server start) — the zantiflow/web image already defaults to
+      # http://backend:4000, matching this service name. This runtime env has NO effect; to target a
+      # different backend host, rebuild with --build-arg BACKEND_URL=… (ADR-0018 §8).
+      BACKEND_URL: http://backend:4000      # the web tier proxies /api/v1 → backend (informational)
       NEXT_PUBLIC_SITE_URL: ${WEB_ORIGIN}   # public origin, so OG/Twitter card image URLs are absolute
     depends_on:
       backend:

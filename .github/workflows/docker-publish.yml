@@ -45,7 +45,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        service: [backend, web, discord-bot, telegram-bot, docs]
+        service: [backend, web, plugin-dist, discord-bot, telegram-bot, docs]
         platform: [linux/amd64, linux/arm64]
         include:
           - platform: linux/amd64
@@ -127,7 +127,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        service: [backend, web, discord-bot, telegram-bot, docs]
+        service: [backend, web, plugin-dist, discord-bot, telegram-bot, docs]
     steps:
       - uses: actions/checkout@v7
         with:

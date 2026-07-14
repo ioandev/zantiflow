@@ -27,6 +27,12 @@ export default function Pair() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [paired, setPaired] = useState(false)
+  // The plugin's `server_url` is the ingest endpoint, which external machines reach through THIS
+  // public origin (the web tier proxies /api/v1 → backend; the backend isn't itself published).
+  // Derive it from the served origin so the copy-paste snippet is correct on the hosted site and
+  // for self-hosters alike. SSR-safe fallback to the hosted domain until the client hydrates.
+  const [origin, setOrigin] = useState('https://zantiflow.com')
+  useEffect(() => setOrigin(window.location.origin), [])
 
   // Owner approval requires a session; check first, and redirect anon users to sign-in.
   useEffect(() => {
@@ -152,7 +158,7 @@ export default function Pair() {
           </p>
           <pre style={snippet}>{`plugins {
     zantiflow location="file:/path/to/zantiflow_plugin.wasm" {
-        server_url    "http://localhost:4000"
+        server_url    "${origin}"
 
         // privacy — defaults shown, all optional (ADR-0002)
         full          "true"            // master switch: send names? per-field keys below override it
