@@ -36,6 +36,9 @@ test.describe('dashboard', () => {
 
     await page.goto('/dashboard')
     await expect(page.getByText('main').first()).toBeVisible()
+    // The dashboard defaults to a "Claude only" view; this spec's injected session is non-Claude, so
+    // show the full tree — otherwise the filter hides it and this asserts the wrong thing.
+    await page.getByRole('checkbox', { name: 'Claude only' }).uncheck()
     // The new session is not present yet.
     await expect(page.getByText('night-deploy')).toHaveCount(0)
 

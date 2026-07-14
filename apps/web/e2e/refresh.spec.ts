@@ -15,6 +15,9 @@ test.describe('manual refresh + presence (ADR-0026)', () => {
     const btn = page.getByTitle('Ask this machine to send a fresh snapshot now')
     await expect(btn).toBeVisible()
     await expect(btn).toHaveText('↻ refresh')
+    // The dashboard defaults to a "Claude only" view; the refreshed snapshot injects a non-Claude
+    // session, so show the full tree — otherwise the filter hides it and the render assertion fails.
+    await page.getByRole('checkbox', { name: 'Claude only' }).uncheck()
 
     // Click → POST /machines/:id/refresh (recorded by the mock) → the button acknowledges.
     await btn.click()

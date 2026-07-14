@@ -1,6 +1,7 @@
 # ADR-0046 — CI drift guard for the committed LICENSES manifests (reproducible scopes only)
 
-- **Status:** Accepted (implemented)
+- **Status:** Accepted (implemented) — **amended by [ADR-0047](0047-license-drift-guard-warns-not-fails.md)**
+  (the drift step now **warns** instead of failing the build; scope/reproducibility unchanged)
 - **Resolves:** [ADR-0036](0036-apache-2-0-and-third-party-license-compliance.md) Open Question/Risk 2
   ("No drift check in CI"); also completes its Risk 1 (stray `MIT` license fields) and Risk 3
   (half-applied `ioandev → ioandev` account rename) as mechanical follow-ups

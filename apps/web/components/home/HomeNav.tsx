@@ -6,6 +6,7 @@ import type { Me } from '@/lib/types'
 import { signInHref } from '@/lib/api'
 import { links } from '@/lib/links'
 import { ThemeToggle } from '@/components/ThemeToggle'
+import { BrandMark } from '@/components/BrandMark'
 
 export function HomeNav({ me }: { me?: Me | null }) {
   const label = me?.name || me?.email || '?'
@@ -13,7 +14,7 @@ export function HomeNav({ me }: { me?: Me | null }) {
   return (
     <div className="hp-nav">
       <div className="hp-nav-brand">
-        <img className="brand-logo" src="/icon.svg" width={22} height={22} alt="" aria-hidden="true" />
+        <BrandMark />
         <div className="appbar-brand">zantiflow</div>
       </div>
       <nav className="hp-nav-mid">

@@ -139,8 +139,9 @@ jobs:
           done
 
   # Guard the committed third-party license manifests against drift (ADR-0036 Risk 2, decided in
-  # ADR-0046): regenerate them and fail if a committed file is stale — i.e. someone bumped a
-  # dependency but forgot `just license`. Only the byte-reproducible manifests are checked:
+  # ADR-0046; downgraded from fail to warn by ADR-0047): regenerate them and emit a `::warning::` if a
+  # committed file is stale — i.e. someone bumped a dependency but forgot `just license`. The job never
+  # fails on drift (does not block merge/publish). Only the byte-reproducible manifests are checked:
   # apps/web/LICENSES (npm, from the frozen pnpm lockfile) and apps/plugin/LICENSES (Cargo, from the
   # committed Cargo.lock). The root LICENSES is deliberately NOT diffed here — its PyPI section comes
   # from the bots' venvs, whose requirements.txt use unpinned `>=` ranges, so regenerating it in CI
@@ -168,9 +169,8 @@ jobs:
       - name: Regenerate plugin LICENSES (Cargo — committed Cargo.lock)
         if: needs.detect.outputs.rust == 'true'
         run: node scripts/generate-licenses.mjs --scope plugin --out apps/plugin/LICENSES
-      - name: Fail if a committed manifest is stale
+      - name: Warn if a committed manifest is stale
         run: |
           if ! git diff --exit-code -- apps/web/LICENSES apps/plugin/LICENSES; then
-            echo "::error::A committed LICENSES manifest is stale — run \`just license\` and commit the result."
-            exit 1
+            echo "::warning::A committed LICENSES manifest is stale — run \`just license\` and commit the result."
           fi

@@ -9,6 +9,7 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import type { Me } from '@/lib/types'
 import { getMe, logout } from '@/lib/api'
+import { BrandMark } from './BrandMark'
 import { ThemeToggle } from './ThemeToggle'
 import { EnableNotifications } from './EnableNotifications'
 import { RedeemPromo } from './RedeemPromo'
@@ -43,7 +44,7 @@ export function TopBar({ me: meProp }: { me?: Me | null }) {
   return (
     <div className="appbar">
       <Link className="appbar-home" href="/dashboard" aria-label="zantiflow — go to dashboard">
-        <img className="brand-logo" src="/icon.svg" width={22} height={22} alt="" aria-hidden="true" />
+        <BrandMark />
         <div className="appbar-brand">zantiflow</div>
       </Link>
       <nav className="appbar-nav">

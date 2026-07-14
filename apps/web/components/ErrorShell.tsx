@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { BrandMark } from './BrandMark'
 
 // Shared visual chrome for the full-page error/empty states (404, runtime error). Presentational only
 // — no hooks — so it works in both the server-rendered not-found page and the client error boundary.
@@ -10,7 +11,7 @@ export function ErrorShell({ code, title, children }: { code: string; title: str
     <main className="nf">
       <div className="nf-card">
         <Link href="/" className="nf-brand" aria-label="zantiflow home">
-          <img className="brand-logo" src="/icon.svg" width={22} height={22} alt="" aria-hidden="true" />
+          <BrandMark />
           <span className="appbar-brand">zantiflow</span>
         </Link>
         <div className="nf-code">{code}</div>
