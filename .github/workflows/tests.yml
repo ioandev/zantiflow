@@ -20,12 +20,18 @@ jobs:
       - id: f
         shell: bash
         run: |
-          if ls Cargo.toml apps/*/Cargo.toml >/dev/null 2>&1; then
+          # Emit `<stack>=true` iff any of its marker globs match at least one file. `compgen -G`
+          # gives real OR semantics; plain `ls a b c` exits non-zero if ANY operand is missing, which
+          # wrongly reported false whenever a listed pattern had no match — e.g. the bots ship
+          # requirements.txt (not pyproject.toml), so `apps/*/pyproject.toml` never matched and the
+          # whole Python job was skipped even though bots + notify-protocol exist.
+          any() { for g in "$@"; do compgen -G "$g" >/dev/null && return 0; done; return 1; }
+          if any 'Cargo.toml' 'apps/*/Cargo.toml'; then
             echo "rust=true" >> "$GITHUB_OUTPUT"
           else
             echo "rust=false" >> "$GITHUB_OUTPUT"
           fi
-          if ls apps/*/pyproject.toml apps/*/requirements.txt packages/notify-protocol/pyproject.toml >/dev/null 2>&1; then
+          if any 'apps/*/pyproject.toml' 'apps/*/requirements.txt' 'packages/notify-protocol/pyproject.toml'; then
             echo "python=true" >> "$GITHUB_OUTPUT"
           else
             echo "python=false" >> "$GITHUB_OUTPUT"
@@ -134,7 +140,10 @@ jobs:
             [ -d "$d" ] || continue
             echo "== $d =="
             ruff check "$d"
-            [ -f "$d/requirements.txt" ] && pip install -r "$d/requirements.txt"
+            # Install from inside the bot dir: requirements.txt pins `-e ../../packages/notify-protocol`,
+            # and pip resolves editable relative paths against the CWD — from repo root that escapes the
+            # repo and fails. (notify-protocol is already installed above; this re-satisfies it harmlessly.)
+            if [ -f "$d/requirements.txt" ]; then ( cd "$d" && pip install -r requirements.txt ); fi
             pytest "$d" -q
           done
 
