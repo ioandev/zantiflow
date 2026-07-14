@@ -1,8 +1,9 @@
 import { defineConfig } from 'astro/config'
 import starlight from '@astrojs/starlight'
 
-// Starlight docs (ADR-0021). Covers the plugin, backend, dashboard, bots, privacy, contributing, and
-// what ADRs are. Pagefind search is built in. Deployed to GitHub Pages.
+// Starlight docs (ADR-0023). Covers the plugin, backend, dashboard, bots, privacy, contributing, and
+// what ADRs are. Pagefind search is built in. Deployed as the zantiflow/docs container (ADR-0048),
+// served at docs.zantiflow.com behind Caddy.
 export default defineConfig({
   site: 'https://docs.zantiflow.com',
   integrations: [

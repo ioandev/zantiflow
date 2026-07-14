@@ -45,7 +45,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        service: [backend, web, discord-bot, telegram-bot]
+        service: [backend, web, discord-bot, telegram-bot, docs]
         platform: [linux/amd64, linux/arm64]
         include:
           - platform: linux/amd64
@@ -92,7 +92,8 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: apps/${{ matrix.service }}/Dockerfile
+          # docs lives at repo-top `docs/` (not `apps/`); everything else under apps/<service>/.
+          file: ${{ matrix.service == 'docs' && 'docs/Dockerfile' || format('apps/{0}/Dockerfile', matrix.service) }}
           platforms: ${{ matrix.platform }}
           build-args: |
             APP_VERSION=${{ steps.ver.outputs.version }}
@@ -126,7 +127,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        service: [backend, web, discord-bot, telegram-bot]
+        service: [backend, web, discord-bot, telegram-bot, docs]
     steps:
       - uses: actions/checkout@v7
         with:

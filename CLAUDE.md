@@ -119,7 +119,14 @@ under `packages/` (`@zantiflow/oauth`, `-express`, `-react`). The plugin and bac
     (ADR-0012) or paste a token, configure via KDL. User guide: **`docs/plugin-getting-started.md`**.
   - **ADR-0023** — *docs site*: **Starlight (Astro)** in `docs/` (a workspace app) — plugin/backend/
     dashboard, **privacy**, **contributing**, a **"what ADRs are"** page, **donations**; local Pagefind
-    search; static → GitHub Pages. ADRs stay source of truth (docs **link**, don't duplicate). Refines ADR-0022.
+    search; static site (hosting → **ADR-0048**, not GitHub Pages). ADRs stay source of truth (docs
+    **link**, don't duplicate). Refines ADR-0022.
+  - **ADR-0048** — *docs deploy* (amends ADR-0023 §4): the docs site ships as the **`zantiflow/docs`
+    container** — built + published by the **existing pipeline** (`docs` added to the `service` matrix of
+    `docker-publish.yml` + `ci.yml`, inheriting ADR-0021's tag scheme; docs lives at top-level `docs/`,
+    so the Dockerfile path is service-aware) as a two-stage build (pnpm/astro → **non-root
+    `nginx-unprivileged` on 8080**) — and served at **`docs.zantiflow.com`** by the same Caddy
+    (`docs.<domain>` block, docs-appropriate CSP). **Not** GitHub Pages. Wire contracts untouched.
   - **ADR-0012** — *device pairing*: the plugin gets its ingest token by showing a code the owner
     approves on the website (RFC-8628 style), then polls + stores it in `/data` — no secret in a layout
     file. Manual token still supported. Resolves ADR-0003's plaintext-secret question.

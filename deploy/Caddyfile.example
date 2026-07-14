@@ -19,3 +19,23 @@ zantiflow.example {
 	# Everything (incl. /api/v1, proxied on to the backend by the web tier) → the Next.js app.
 	reverse_proxy web:3000
 }
+
+# Documentation site (ADR-0048) — the zantiflow/docs static image. Replace docs.zantiflow.example with
+# your docs subdomain (the hosted instance uses docs.zantiflow.com).
+docs.zantiflow.example {
+	encode gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options    "nosniff"
+		X-Frame-Options           "DENY"
+		Referrer-Policy           "strict-origin-when-cross-origin"
+		# Docs serve only trusted, first-party authored content (unlike the dashboard, which renders
+		# untrusted terminal output) — so Starlight's inline theme script + inline styles and the
+		# local Pagefind search bundle are allowed. No third-party origins.
+		Content-Security-Policy   "default-src 'self'; img-src 'self' data:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'"
+		-Server
+	}
+
+	reverse_proxy docs:8080
+}

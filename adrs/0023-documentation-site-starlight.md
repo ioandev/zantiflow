@@ -1,6 +1,7 @@
 # ADR-0023 — Documentation site: Starlight (Astro) in `docs/`
 
 - **Status:** Accepted
+- **Amended by:** [ADR-0048](0048-docs-site-containerized-deploy.md) — §4's hosting is resolved: docs ship as the `zantiflow/docs` container served at `docs.<domain>`, **not** GitHub Pages
 - **Refines:** [ADR-0022](0022-plugin-publishing-and-user-docs.md) — the `docs/` folder becomes a **Starlight site**; the plugin getting-started guide becomes a content page in it
 - **Builds on:** [ADR-0015](0015-modular-code-organization.md) (monorepo), [ADR-0021](0021-dockerization-and-deployment.md) (deploy), the whole ADR corpus
 - **Date:** 2026-07-11
@@ -56,6 +57,10 @@ a docs page overlaps an ADR, it **links** rather than copies (drift-avoidance).
 instance may also serve it at `docs.<domain>` (static behind Caddy, or a `zantiflow/docs` image per
 ADR-0021). Search is **Pagefind** (local, no SaaS). CI builds + link-checks on PRs.
 
+> **Superseded by [ADR-0048](0048-docs-site-containerized-deploy.md):** the project ships docs as the
+> **`zantiflow/docs` container** (the option named above), built by the standard pipeline and served at
+> `docs.zantiflow.com` behind Caddy — **not** GitHub Pages. See Open Question 1 below (now resolved).
+
 ### 5. Consolidation
 
 Existing scattered docs move in: the plugin guide becomes a Starlight page; `FINDINGS.md` and the ADRs
@@ -76,7 +81,8 @@ are **linked**, not duplicated. Docs **track releases** (config keys, wire-contr
 
 ## Open Questions / Risks
 
-1. **Hosting** — **decided: GitHub Pages** by default; the hosted instance may also serve `docs.<domain>`.
+1. **Hosting** — **resolved by [ADR-0048](0048-docs-site-containerized-deploy.md): the `zantiflow/docs`
+   container**, served at `docs.zantiflow.com` behind Caddy (not GitHub Pages).
 2. **Versioned docs** (per plugin release) via Starlight's versioning — **deferred** until releases warrant it.
 3. **Auto-generate an ADR index page** from `adrs/` — nice-to-have; for now the page **links** the
    canonical `adrs/README.md`. **(decided: link, not generate, for now.)**

@@ -31,3 +31,6 @@ design
 
 # Test files (not needed at runtime)
 **/test_*.py
+**/*_test.py
+**/conftest.py
+**/tests/

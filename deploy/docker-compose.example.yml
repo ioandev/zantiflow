@@ -62,6 +62,17 @@ services:
       retries: 5
     mem_limit: 512m
 
+  docs:
+    image: zantiflow/docs:0.1.0             # Starlight static site (ADR-0048), served at docs.<domain>
+    restart: unless-stopped
+    # NO published port — reached only via Caddy. Non-root nginx on 8080; all-static, no env/secrets.
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8080/"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    mem_limit: 128m
+
   caddy:
     image: caddy:2                          # TLS termination + security headers/CSP (ADR-0018 §8, audit #5)
     restart: unless-stopped
@@ -74,6 +85,7 @@ services:
       - caddy-config:/config
     depends_on:
       - web
+      - docs
 
   # --- Optional pro-notification bots (ADR-0007 / ADR-0010). Uncomment to enable. ---
   # discord-bot:

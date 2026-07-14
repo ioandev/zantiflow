@@ -109,11 +109,42 @@ export const submitOutput = async (
   // near-simultaneously; a Map put is last-write-wins, so concurrent deliveries just leave the newest
   // (no unique-constraint race to handle any more).
   store.put(accountId, machineId, paneKey, lines, captured)
-  await prisma.outputRequest.updateMany({
-    where: { accountId, machineId, paneKey, status: 'pending' },
-    data: { status: 'fulfilled' },
-  })
+  await markFulfilled(prisma, accountId, machineId, paneKey)
   return true
+}
+
+/** True for a transient MariaDB deadlock / write-conflict that a retry can resolve. */
+const isWriteConflict = (e: unknown): boolean => {
+  const code = (e as { code?: string }).code
+  const msg = String((e as { message?: string }).message ?? '')
+  return code === 'P2034' || /deadlock|write conflict|\b1213\b/i.test(msg)
+}
+
+/** Flip the pane's pending request(s) to `fulfilled`, retrying on a transient deadlock.
+ *
+ * The `WHERE status='pending'` update runs over the `[machineId, status]` secondary index, so several
+ * concurrent deliveries for the SAME pane can pick InnoDB deadlock victims (Error 1213 → Prisma P2034)
+ * and 500 — exactly what the "concurrent deliveries without a 500" test guards. The update is
+ * idempotent: a rolled-back victim just re-runs, and by then a winner has already set `fulfilled`, so
+ * the retry matches no rows, takes no contended locks, and succeeds. */
+const markFulfilled = async (
+  prisma: PrismaClient,
+  accountId: string,
+  machineId: string,
+  paneKey: string,
+): Promise<void> => {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      await prisma.outputRequest.updateMany({
+        where: { accountId, machineId, paneKey, status: 'pending' },
+        data: { status: 'fulfilled' },
+      })
+      return
+    } catch (e) {
+      if (attempt >= 4 || !isWriteConflict(e)) throw e
+      await new Promise((r) => setTimeout(r, 10 * (attempt + 1)))
+    }
+  }
 }
 
 /** Owner read: the latest output, a pending marker, or "not shared". */
