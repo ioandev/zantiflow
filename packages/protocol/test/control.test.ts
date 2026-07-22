@@ -51,6 +51,14 @@ describe('ControlResponse (ADR-0026)', () => {
       false,
     )
   })
+
+  it('heartbeatSec (ADR-0051) is optional, positive-int seconds', () => {
+    const base = { pendingOutput: [], viewers: { active: false }, refreshSeq: 0 }
+    expect(ControlResponse.safeParse(base).success).toBe(true) // old backends omit it
+    expect(ControlResponse.safeParse({ ...base, heartbeatSec: 30 }).success).toBe(true)
+    expect(ControlResponse.safeParse({ ...base, heartbeatSec: 0 }).success).toBe(false)
+    expect(ControlResponse.safeParse({ ...base, heartbeatSec: 2.5 }).success).toBe(false)
+  })
 })
 
 describe('jsonSchemas', () => {

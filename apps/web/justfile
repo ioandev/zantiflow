@@ -1,0 +1,37 @@
+# zantiflow web (Next.js dashboard) — dev tasks. Run `just` to list.
+# ⚠ Never run `just build` while the dev server (:3000) is up — building into the same `.next`
+# corrupts it. `just e2e` is safe alongside dev: it builds into an isolated `.next-e2e`
+# (NEXT_DIST_DIR) and serves on :3100 (E2E_PORT).
+
+# List available recipes.
+default:
+    @just --list
+
+# Run the dev server on http://localhost:3000.
+dev:
+    pnpm run dev
+
+# Production build into .next — NOT while `just dev` is running (see header).
+build:
+    pnpm run build
+
+# Run the vitest unit suite.
+test:
+    pnpm run test
+
+# Playwright e2e against an isolated prod build (.next-e2e, port 3100) — safe while dev runs.
+e2e:
+    NEXT_DIST_DIR=.next-e2e pnpm exec next build
+    NEXT_DIST_DIR=.next-e2e E2E_PORT=3100 pnpm exec playwright test
+
+# Re-run the e2e specs without rebuilding (reuses .next-e2e).
+e2e-run:
+    NEXT_DIST_DIR=.next-e2e E2E_PORT=3100 pnpm exec playwright test
+
+# Remove the throwaway e2e build output.
+e2e-clean:
+    rm -rf .next-e2e
+
+# Serve the production build on :3000.
+start:
+    pnpm run start

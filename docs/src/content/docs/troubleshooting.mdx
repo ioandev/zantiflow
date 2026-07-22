@@ -40,13 +40,30 @@ Before changing anything, look at the two places the plugin already tells you wh
 
 <Aside type="tip">
 The plugin log is the single most useful diagnostic. Keep the `tail -f … | grep zantiflow` running in
-a spare pane while you reproduce the problem.
+a spare pane while you reproduce the problem. For attention or send-cadence problems, set the plugin
+config key `debug "true"` — the plugin then also logs every attention onset/clear, every snapshot it
+POSTs (with the reason and contents summary), and when Claude panes go active/idle across your
+sessions. It's transition-only (quiet when nothing changes), local-only, and never includes your
+token or pane content. `grep "zantiflow] debug:"` isolates these lines.
 </Aside>
 
 ## The plugin isn't sending anything
 
 The dashboard shows no machine, or a machine that never updates. Work down this list — the order
 matches how often each one is the culprit.
+
+### The plugin's pane was closed (this unloads the plugin!)
+
+Zellij ties a plugin instance's lifetime to its pane: **closing the pane unloads the plugin** — even
+an instance that was auto-started headless by `load_plugins` and only later surfaced with
+`launch-or-focus-plugin`. Closing the floating pane right after pairing is the classic way to kill
+telemetry without noticing; the Zellij log shows a clean `Bye from plugin N` when it happens.
+
+- To dismiss the plugin's pane without killing it, **hide** it (toggle floating panes / switch tab)
+  instead of closing it.
+- After a successful pairing you don't need the pane at all: start a fresh session and let
+  `load_plugins` run the plugin headless — the token is already in the plugin's cache, so it reports
+  immediately with no pane to lose.
 
 ### Permissions were never granted
 

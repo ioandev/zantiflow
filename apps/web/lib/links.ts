@@ -8,6 +8,7 @@ export const links = {
   /** The plugin getting-started guide — installing the plugin is the real activation event (HOMEPAGE.md §5). */
   getStarted: `${DOCS}/plugin/getting-started/`,
   privacy: `${DOCS}/privacy/`,
+  troubleshooting: `${DOCS}/troubleshooting/`,
   contributing: `${DOCS}/contributing/`,
   donations: `${DOCS}/donations/`,
   github: GITHUB_URL,

@@ -1,0 +1,21 @@
+# zantiflow plugin-dist (GitHub-Release .wasm mirror server) — dev tasks. Run `just` to list.
+
+# List available recipes.
+default:
+    @just --list
+
+# Run with hot-reload (tsx watch; reads .env if present).
+dev:
+    pnpm run dev
+
+# Type-check + compile to dist/.
+build:
+    pnpm run build
+
+# Run the vitest suite.
+test:
+    pnpm run test
+
+# Serve the compiled build (node dist/index.js).
+start:
+    pnpm run start

@@ -181,14 +181,14 @@ suite('claude.idle (testcontainers MariaDB)', () => {
     expect((await evaluateMachineIdle(prisma, accountId, machineId, 'pro', now)).state).toBe('cleared')
   })
 
-  it('fires immediately (self-timed, threshold 0) then respects the 300s cooldown', async () => {
+  it('fires immediately (self-timed, threshold 0), then ONCE per idle episode (ADR-0056)', async () => {
     const { accountId, machineId } = await setup()
     const t0 = new Date('2026-07-12T00:00:00Z')
     const scope = new Set([''])
     let r = await processAttentions(prisma, accountId, machineId, [idleAttn(machineId)], 'pro', t0, scope)
     expect(r.fired).toHaveLength(1)
     expect(r.fired[0]).toMatchObject({ type: 'claude.idle', targetKey: '::' })
-    // Still idle 2 min later, within the 300s cooldown → no re-fire.
+    // Still idle 2 min later → silence.
     r = await processAttentions(
       prisma,
       accountId,
@@ -199,14 +199,36 @@ suite('claude.idle (testcontainers MariaDB)', () => {
       scope,
     )
     expect(r.fired).toHaveLength(0)
-    // Past the cooldown → re-fires.
+    // Still idle WELL past the old 300 s cooldown → STILL silence: an idle machine is the steady
+    // state, one episode notifies once (the every-5-min nag observed live 2026-07-22).
     r = await processAttentions(
       prisma,
       accountId,
       machineId,
       [idleAttn(machineId)],
       'pro',
-      new Date(t0.getTime() + 301_000),
+      new Date(t0.getTime() + 3 * 3600_000),
+      scope,
+    )
+    expect(r.fired).toHaveLength(0)
+    // A session becomes active (clear-on-resume deletes the row, resetting the cooldown)…
+    await processAttentions(
+      prisma,
+      accountId,
+      machineId,
+      [idleAttn(machineId, 'cleared')],
+      'pro',
+      new Date(t0.getTime() + 4 * 3600_000),
+      scope,
+    )
+    // …and the NEXT all-idle episode fires again, immediately.
+    r = await processAttentions(
+      prisma,
+      accountId,
+      machineId,
+      [idleAttn(machineId)],
+      'pro',
+      new Date(t0.getTime() + 4 * 3600_000 + 60_000),
       scope,
     )
     expect(r.fired).toHaveLength(1)

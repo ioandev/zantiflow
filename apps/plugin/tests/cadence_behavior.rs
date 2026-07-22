@@ -7,11 +7,15 @@ use zantiflow_plugin::cadence::{SendGate, Tick};
 
 const THREE_MINUTES: u64 = 180;
 
-/// Run `SendGate` over `ticks` wall-ticks and return how many snapshots it would send. `inputs(w)`
+/// Run `gate` over `ticks` wall-ticks and return how many snapshots it would send. `inputs(w)`
 /// yields `(salient, structural, attention_active)` for wall-tick `w`, so a scenario can hold them
 /// constant (idle) or vary them (a repainting pane, an onset, …).
-fn sends_over(ticks: u64, watched: bool, mut inputs: impl FnMut(u64) -> (u64, u64, bool)) -> u64 {
-    let mut gate = SendGate::default();
+fn sends_over_gate(
+    mut gate: SendGate,
+    ticks: u64,
+    watched: bool,
+    mut inputs: impl FnMut(u64) -> (u64, u64, bool),
+) -> u64 {
     if watched {
         gate.set_watched(true); // an open dashboard: forces the cold-start send, tightens the floor
     }
@@ -32,9 +36,15 @@ fn sends_over(ticks: u64, watched: bool, mut inputs: impl FnMut(u64) -> (u64, u6
     sends
 }
 
+fn sends_over(ticks: u64, watched: bool, inputs: impl FnMut(u64) -> (u64, u64, bool)) -> u64 {
+    sends_over_gate(SendGate::default(), ticks, watched, inputs)
+}
+
 #[test]
 fn idle_unwatched_machine_sends_only_the_cold_start_over_three_minutes() {
-    // GIVEN an idle, unwatched machine — nothing changes, nobody is watching, no attention.
+    // GIVEN an idle, unwatched machine — nothing changes, nobody is watching, no attention. (Three
+    // minutes sits below the 300 s free-tier heartbeat, ADR-0051 — see the heartbeat scenarios for
+    // what bounds the silence beyond it.)
     // WHEN three minutes of ~1 s ticks pass.
     let sends = sends_over(THREE_MINUTES, false, |_| (42, 7, false));
     // THEN it POSTs exactly ONCE (the cold-start snapshot) — versus 180 under the old per-second model.
@@ -42,6 +52,27 @@ fn idle_unwatched_machine_sends_only_the_cold_start_over_three_minutes() {
         sends, 1,
         "an idle unwatched machine must go silent after cold-start"
     );
+}
+
+#[test]
+fn an_idle_pro_machine_heartbeats_every_30s() {
+    // GIVEN an idle, unwatched machine whose backend priced the heartbeat at the pro 30 s (ADR-0051).
+    let mut gate = SendGate::default();
+    gate.set_heartbeat_secs(30);
+    // WHEN three minutes of ~1 s ticks pass with no change at all.
+    let sends = sends_over_gate(gate, THREE_MINUTES, false, |_| (42, 7, false));
+    // THEN it POSTs the cold-start plus one no-change heartbeat per 30 ticks: 1, 31, 61, 91, 121, 151.
+    assert_eq!(sends, 6, "a pro machine re-affirms its state every ~30 s");
+}
+
+#[test]
+fn an_idle_free_machine_heartbeats_every_5_minutes() {
+    // GIVEN an idle, unwatched machine on the free default (no backend pricing needed).
+    // WHEN ten minutes of ~1 s ticks pass with no change at all.
+    let sends = sends_over(600, false, |_| (42, 7, false));
+    // THEN it POSTs the cold-start plus one heartbeat per 300 ticks: 1, 301 — staleness is bounded
+    // at ~5 min without giving free accounts the pro cadence.
+    assert_eq!(sends, 2, "a free machine re-affirms its state every ~5 min");
 }
 
 #[test]

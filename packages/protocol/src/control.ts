@@ -33,6 +33,12 @@ export const ControlResponse = z.object({
   }),
   /** Monotonic per-machine counter; a bump means "the user hit refresh → send one snapshot now". */
   refreshSeq: z.number().int().nonnegative(),
+  /**
+   * Tier-paced heartbeat interval (ADR-0051): the plugin re-sends a full snapshot after this many
+   * seconds of send-silence, bounding backend staleness (30 pro / 300 free). Additive + optional:
+   * an old plugin ignores it; a plugin that never receives it heartbeats at its 300 s default.
+   */
+  heartbeatSec: z.number().int().positive().optional(),
 })
 
 export type ControlRequest = z.infer<typeof ControlRequest>

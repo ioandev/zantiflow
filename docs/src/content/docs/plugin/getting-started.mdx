@@ -56,5 +56,8 @@ plaintext beyond that one delivery.
 | `full` | `true` \| `false` | master privacy baseline |
 | `session_names` / `tab_names` / `pane_names` | `send` \| `hidden` | per-field overrides |
 | `pane_output` | `true` \| `false` | on-demand output channel (default off) |
+| `hostname` | `true` \| `false` | allow the real-hostname lookup (default off; needs the RunCommands permission, only requested when on and `machine_name` is `real`) |
+| `control_long_poll` | `true` \| `false` | hold the control poll for ≈1 s reactions (default on; `false` = fixed ~5 s poll) |
+| `debug` | `true` \| `false` | verbose local troubleshooting lines in Zellij's own log (default off; attention/send/claude-activity transitions — never your token or pane content) |
 
 Settings can change **without a restart** via Zellij's `PluginConfigurationChanged` event.

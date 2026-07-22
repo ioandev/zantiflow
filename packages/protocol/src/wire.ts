@@ -52,6 +52,9 @@ export const Pane = z.object({
   isFocused: z.boolean(),
   exited: z.boolean(),
   contentFingerprint: str(64),
+  /** Additive optional (ADR-0055, still v4): the plugin's Claude-pane verdict (title marker or
+   *  live-content signatures, ADR-0054). Authoritative when present; old plugins omit it. */
+  claude: z.boolean().optional(),
 })
 
 export const Tab = z.object({
@@ -80,6 +83,12 @@ export const SnapshotV4 = z.object({
   machine: MachineIdentity,
   attentions: z.array(Attention).max(MAX_ATTENTIONS),
   sessions: z.array(Session).max(MAX_SESSIONS),
+  /**
+   * Additive optional (ADR-0051, still v4): true when ≥1 claude pane THIS instance observes is
+   * producing output (own-session view — the backend merges instances per machine and stays the
+   * authority on "across all sessions", ADR-0027). Old plugins omit it. Advisory/corroborating.
+   */
+  claudeActive: z.boolean().optional(),
 })
 
 export type PrivacyEcho = z.infer<typeof PrivacyEcho>

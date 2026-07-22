@@ -5,6 +5,7 @@
 //! limits the backend enforces, so a huge session tree can't produce a rejected snapshot.
 use crate::attentions;
 use crate::config::PluginConfig;
+use crate::debuglog::PaneObs;
 use crate::fingerprint;
 use crate::host::HostPort;
 use crate::model::{Attention, Pane, Session, SessionState, SnapshotV4, Tab, WIRE_VERSION};
@@ -14,7 +15,29 @@ const MAX_SESSIONS: usize = 200;
 const MAX_TABS: usize = 200;
 const MAX_PANES: usize = 500;
 
+/// A built snapshot plus the debug observations gathered along the way (ADR-0049/0050): EVERY pane
+/// seen this tick — raw title, claude verdict, and the freshness verdict the thinking detector used.
+/// The observations are local facts (session NAME + title, not sid) and are only ever consumed by
+/// `debuglog` — they never hit the wire.
+pub struct SnapshotBuild {
+    pub snap: SnapshotV4,
+    pub panes: Vec<PaneObs>,
+}
+
+/// [`build_snapshot_observed`] without the debug observations — the convenience form most tests use.
 pub fn build_snapshot(
+    host: &impl HostPort,
+    config: &PluginConfig,
+    machine_id: &str,
+    salt: &str,
+    tick: u64,
+    wall_tick: u64,
+    activity: &mut crate::activity::PaneActivity,
+) -> SnapshotV4 {
+    build_snapshot_observed(host, config, machine_id, salt, tick, wall_tick, activity).snap
+}
+
+pub fn build_snapshot_observed(
     host: &impl HostPort,
     config: &PluginConfig,
     machine_id: &str,
@@ -24,7 +47,7 @@ pub fn build_snapshot(
     // `claude.thinking` detector can require a pane to be *still producing output* (ADR-0025 fix).
     wall_tick: u64,
     activity: &mut crate::activity::PaneActivity,
-) -> SnapshotV4 {
+) -> SnapshotBuild {
     let p = &config.privacy;
 
     // Live sessions, current first (stable sort keeps host order among the rest) — ADR-0001.
@@ -33,6 +56,7 @@ pub fn build_snapshot(
 
     let mut sessions: Vec<Session> = Vec::new();
     let mut attentions: Vec<Attention> = Vec::new();
+    let mut pane_obs: Vec<PaneObs> = Vec::new();
     // Pane keys observed this tick, to prune the freshness tracker down to what's still live.
     let mut live_keys: std::collections::HashSet<String> = std::collections::HashSet::new();
 
@@ -63,13 +87,37 @@ pub fn build_snapshot(
                 // line is a prompt) and, as the more specific/actionable state, wins over thinking.
                 // thinking additionally requires the pane to be FRESH — a spinner glyph Claude Code
                 // leaves frozen on a finished background pane must not read as "still thinking".
-                if attentions::is_claude_pane(&pane.title, pane.command.as_deref()) {
+                // Identity: title marker first; content-fallback (ADR-0054) for own-session panes —
+                // Zellij delivers title changes only on unrelated SessionUpdates (measured minutes
+                // late), while the viewport is re-read every tick, so content is the timely signal.
+                let is_claude = attentions::is_claude_pane(&pane.title, pane.command.as_deref())
+                    || scrollback
+                        .as_deref()
+                        .is_some_and(attentions::is_claude_content);
+                // Record EVERY pane's title + verdicts for the ADR-0049/0050 debug log (local-only),
+                // so an unrecognized claude pane's actual title is auditable in the field.
+                pane_obs.push(PaneObs {
+                    session: s.name.clone(),
+                    tab_id: t.tab_id,
+                    pane_id: pane.id,
+                    title: pane.title.clone(),
+                    is_claude,
+                    fresh,
+                });
+                if is_claude {
                     let on_prompt = scrollback
                         .as_deref()
                         .is_some_and(attentions::last_line_is_prompt);
+                    // Thinking = still producing output AND a turn-in-flight signal: the title's
+                    // spinner frame, or — timely regardless of title delivery (ADR-0054) — the
+                    // `esc to interrupt` footer in the live viewport tail.
+                    let turn_in_flight = attentions::is_thinking_marker(&pane.title)
+                        || scrollback
+                            .as_deref()
+                            .is_some_and(attentions::tail_shows_turn_in_flight);
                     if on_prompt {
                         attentions.push(attentions::needs_input(&sid, t.tab_id, pane.id));
-                    } else if fresh && attentions::is_thinking_marker(&pane.title) {
+                    } else if fresh && turn_in_flight {
                         attentions.push(attentions::thinking(&sid, t.tab_id, pane.id));
                     }
                 }
@@ -85,6 +133,7 @@ pub fn build_snapshot(
                     is_focused: pane.is_focused,
                     exited: pane.exited,
                     content_fingerprint: fp,
+                    claude: is_claude,
                 });
             }
             tabs.push(Tab {
@@ -135,14 +184,23 @@ pub fn build_snapshot(
         config.machine_alias.as_deref(),
     );
 
-    SnapshotV4 {
-        version: WIRE_VERSION,
-        machine_id: machine_id.to_string(),
-        captured_at_tick: tick,
-        privacy: privacy::privacy_echo(p),
-        machine,
-        attentions,
-        sessions,
+    // Machine claude-activity flag (ADR-0051): ≥1 observed claude pane is producing output. Only
+    // own-session panes can ever be fresh (scrollback is unreadable across sessions), so this is
+    // honestly this INSTANCE's view; the backend merges instances per machine.
+    let claude_active = pane_obs.iter().any(|c| c.is_claude && c.fresh);
+
+    SnapshotBuild {
+        snap: SnapshotV4 {
+            version: WIRE_VERSION,
+            machine_id: machine_id.to_string(),
+            captured_at_tick: tick,
+            privacy: privacy::privacy_echo(p),
+            machine,
+            attentions,
+            sessions,
+            claude_active,
+        },
+        panes: pane_obs,
     }
 }
 
@@ -210,8 +268,14 @@ fn strip_volatile(v: &mut serde_json::Value) {
     }
 }
 
-/// Additionally remove every pane's `contentFingerprint`, leaving only tree structure + attentions.
+/// Additionally remove every pane's `contentFingerprint` — and the `claudeActive` aggregate derived
+/// from them (ADR-0051) — leaving only tree structure + attentions. `claudeActive` is content-level:
+/// its flips reach the backend via the salient (coalesced) path or the heartbeat, never the
+/// floor-bypassing notable path.
 fn strip_fingerprints(v: &mut serde_json::Value) {
+    if let Some(obj) = v.as_object_mut() {
+        obj.remove("claudeActive");
+    }
     let Some(sessions) = v
         .get_mut("sessions")
         .and_then(serde_json::Value::as_array_mut)
@@ -257,6 +321,7 @@ mod tests {
             pane_output: false,
             control_long_poll: false,
             hostname_enabled: true, // base case sends the real hostname (see the opt-in gate test)
+            debug: false,
             warnings: vec![],
         }
     }
@@ -501,6 +566,96 @@ mod tests {
         let s = build_snapshot(&host, &base_config(), "m-1", "salt", 2, 2, &mut act);
         assert!(s.attentions.iter().any(|a| a.kind == "claude.needs-input"));
         assert!(!s.attentions.iter().any(|a| a.kind == "claude.thinking"));
+    }
+
+    #[test]
+    fn stale_title_pane_with_a_live_turn_is_detected_and_thinks_via_content() {
+        // THE 2026-07-22 INCIDENT (ADR-0054): Zellij delivers title changes minutes late, so the
+        // pane title showed a stale idle "✳" (or even the shell's prompt) while the viewport showed
+        // a RUNNING turn. Content must carry both identity and thinking, title be damned.
+        let ui =
+            "· Bunning… (12s · ↓ 7.0k tokens)\n❯ \n  ⏵⏵ bypass permissions on · esc to interrupt";
+        for stale_title in ["nordic@host:/repos/x", "✳ Start using Zustand everywhere"] {
+            let mut host = thinking_host(stale_title);
+            let mut act = crate::activity::PaneActivity::default();
+            host.scrollback.insert(7, ui.to_string());
+            let b1 = build_snapshot_observed(&host, &base_config(), "m-1", "salt", 1, 1, &mut act);
+            // Identity via content from the very first tick…
+            assert!(b1.panes[0].is_claude, "title {stale_title:?}");
+            // …thinking waits for freshness (first observation is never fresh, ADR-0034).
+            assert!(!b1
+                .snap
+                .attentions
+                .iter()
+                .any(|a| a.kind == "claude.thinking"));
+            host.scrollback
+                .insert(7, format!("{ui}\nstreaming more output"));
+            let b2 = build_snapshot_observed(&host, &base_config(), "m-1", "salt", 2, 2, &mut act);
+            assert!(
+                b2.snap
+                    .attentions
+                    .iter()
+                    .any(|a| a.kind == "claude.thinking"),
+                "fresh + esc-to-interrupt must think despite stale title {stale_title:?}"
+            );
+            assert!(b2.snap.claude_active);
+            // The verdict rides the wire per pane (ADR-0055) so the backend's claude.idle scope
+            // sees this pane even though its NAME carries no marker.
+            assert!(b2.snap.sessions[0].tabs[0].panes[0].claude);
+        }
+    }
+
+    #[test]
+    fn observed_build_reports_claude_panes_with_the_detectors_freshness() {
+        // The observations feed the ADR-0049 debug log: local session NAME + tab/pane + the same
+        // freshness verdict the thinking detector used this tick.
+        let mut host = thinking_host("⠐ working");
+        let mut act = crate::activity::PaneActivity::default();
+        host.scrollback.insert(7, "line 1".into());
+        let b1 = build_snapshot_observed(&host, &base_config(), "m-1", "salt", 1, 1, &mut act);
+        assert_eq!(
+            b1.panes,
+            vec![crate::debuglog::PaneObs {
+                session: "work".into(),
+                tab_id: 0,
+                pane_id: 7,
+                title: "⠐ working".into(),
+                is_claude: true,
+                fresh: false, // first observation is never fresh (ADR-0034)
+            }]
+        );
+        // No pane is provably producing output yet → the wire-level flag is idle (ADR-0051).
+        assert!(!b1.snap.claude_active);
+        // Output changed → the observation flips to fresh, in step with the detector.
+        host.scrollback.insert(7, "line 1\nline 2".into());
+        let b2 = build_snapshot_observed(&host, &base_config(), "m-1", "salt", 2, 2, &mut act);
+        assert!(b2.panes[0].fresh);
+        assert!(b2.snap.claude_active);
+        assert!(b2
+            .snap
+            .attentions
+            .iter()
+            .any(|a| a.kind == "claude.thinking"));
+    }
+
+    #[test]
+    fn every_pane_is_observed_with_its_title_and_claude_verdict() {
+        // `session()` builds an nvim pane — observed too (ADR-0052 title audit), just not claude,
+        // and a busy non-claude pane never drives the machine-level claude flag.
+        let mut host = FakeHost {
+            live: vec![session("main", true)],
+            ..Default::default()
+        };
+        let mut act = crate::activity::PaneActivity::default();
+        host.scrollback.insert(1, "a".into());
+        build_snapshot_observed(&host, &base_config(), "m-1", "salt", 1, 1, &mut act);
+        host.scrollback.insert(1, "ab".into()); // changing → fresh, but not claude
+        let b = build_snapshot_observed(&host, &base_config(), "m-1", "salt", 2, 2, &mut act);
+        assert_eq!(b.panes.len(), 1);
+        assert_eq!(b.panes[0].title, "nvim");
+        assert!(!b.panes[0].is_claude);
+        assert!(b.panes[0].fresh);
+        assert!(!b.snap.claude_active);
     }
 
     #[test]

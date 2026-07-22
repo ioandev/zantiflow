@@ -241,6 +241,10 @@ console render survives only as an optional dev/debug view; the read API + websi
   change a decision, add a new ADR and add a forward-pointer to the old one (see how ADR-0001 points
   to ADR-0002). Keep the `adrs/README.md` index up to date.
 - **Plans** live under `plans/`.
+- **`COMMIT.md`** — when asked to create `COMMIT.md`, these rules always apply: it's a root-level
+  scratch file describing what the pending commit is about, written **without splitting lines**
+  (never hard-wrap; each paragraph/bullet is one single line). It is **gitignored** and must never
+  be committed.
 - **License:** this project's default license is **Apache-2.0** — new code, apps, and packages ship
   under it unless stated otherwise. (Exception: the vendored `@zantiflow/oauth*` packages under
   `packages/` retain their upstream **MIT** license — see ADR-0004.)
@@ -260,7 +264,9 @@ console render survives only as an optional dev/debug view; the read API + websi
   and `hidden` machine-name modes need no extra permission (ADR-0002).
 - **Pin `zellij-tile` to an exact version.** Its `Event`/`EventType`/`PermissionType` enums are
   `#[non_exhaustive]` and still evolving; re-verify field/enum names against the pinned tag.
-- **Wire contract is v4** (snapshot: `machineId` + `attentions` + tree + privacy). **Pane output is NOT in
+- **Wire contract is v4** (snapshot: `machineId` + `attentions` + tree + privacy; plus the additive
+  optional `claudeActive` flag and the tier-paced 30 s/300 s heartbeat re-send — ADR-0051, the
+  interval arriving via the control response's `heartbeatSec`). **Pane output is NOT in
   the ingest contract** — it's a **separate on-demand channel** (ADR-0016): the site registers a request →
   the plugin's **~5 s poll** `GET /output/pending` → `POST /output` returns ≤50 **ANSI-colored** lines, only
   if `pane_output` is ON (default OFF; content otherwise never leaves the machine — and on the backend it is
@@ -291,6 +297,11 @@ console render survives only as an optional dev/debug view; the read API + websi
   `apps/*`). `pnpm install`, then `pnpm -r build` (tsc) and `pnpm -r test` (vitest, 51 passing) work
   for `packages/*`. Single package: `pnpm --filter @zantiflow/oauth test`. Note: vitest pulls in
   esbuild, whose native build is approved via `allowBuilds` in `pnpm-workspace.yaml`.
+- **`just` task runner (ADR-0050):** the root `Justfile` holds cross-cutting recipes (`just license`,
+  `just notify`); **every app** (`apps/*` + `docs`) has its own `justfile` of thin wrappers over its
+  canonical commands — `just` in an app dir lists them. Recipes encode the safe forms (e.g. web
+  `just e2e` builds into `.next-e2e` on :3100, never clobbering a running dev server). New apps ship
+  a justfile at scaffold time.
 - **Still to scaffold** (per ADR-0001 §8): `apps/backend` (Node + TS + Express), `apps/plugin`
   (Rust → `wasm32-wasip1`, Cargo workspace), `apps/web` (Next.js PWA), `apps/{discord,telegram}-bot`
   (Python). No Nx/Turborepo/Bazel initially.

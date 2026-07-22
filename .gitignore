@@ -34,6 +34,9 @@ playwright-report/
 .env.*
 !.env.example
 
+# Local commit-description scratch file (see CLAUDE.md — never committed)
+COMMIT.md
+
 # Logs / OS / editor
 *.log
 .DS_Store

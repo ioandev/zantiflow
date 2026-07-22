@@ -95,6 +95,10 @@ pub struct ControlResponse {
     viewers: Viewers,
     #[serde(default, rename = "refreshSeq")]
     pub refresh_seq: u64,
+    /// Tier-paced heartbeat interval in seconds (ADR-0051): 30 pro / 300 free. `None` (an older
+    /// backend) leaves the plugin's conservative 300 s default in place.
+    #[serde(default, rename = "heartbeatSec")]
+    pub heartbeat_sec: Option<u64>,
 }
 
 impl ControlResponse {
@@ -130,6 +134,7 @@ mod tests {
             pane_output: false,
             control_long_poll: false,
             hostname_enabled: true,
+            debug: false,
             warnings: vec![],
         }
     }
@@ -164,10 +169,12 @@ mod tests {
 
     #[test]
     fn parses_a_full_response() {
-        let body = br#"{"pendingOutput":[{"machineId":"m-1","sessionSid":"sabc","tabId":2,"paneId":7}],"viewers":{"active":true},"refreshSeq":4}"#;
+        let body = br#"{"pendingOutput":[{"machineId":"m-1","sessionSid":"sabc","tabId":2,"paneId":7}],"viewers":{"active":true},"refreshSeq":4,"heartbeatSec":30}"#;
         let r = parse_control_response(body).unwrap();
         assert!(r.watched());
         assert_eq!(r.refresh_seq, 4);
+        // The tier-priced heartbeat interval (ADR-0051) rides along; absent on older backends.
+        assert_eq!(r.heartbeat_sec, Some(30));
         assert_eq!(
             r.pending_output,
             vec![PendingRef {
@@ -219,6 +226,8 @@ mod tests {
         assert!(!r.watched());
         assert_eq!(r.refresh_seq, 0);
         assert!(r.pending_output.is_empty());
+        // No heartbeatSec (older backend) → None; the gate keeps its 300 s free-tier default.
+        assert_eq!(r.heartbeat_sec, None);
     }
 
     #[test]

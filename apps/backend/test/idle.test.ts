@@ -23,7 +23,9 @@ describe('idleThresholdSeconds', () => {
   })
 })
 
-// A session tree with mixed panes: s1 has a claude pane + an nvim pane; s2 has only a shell.
+// A session tree AS ZELLIJ ACTUALLY REPORTS IT (ADR-0055): `command` is null for every pane; Claude
+// identity comes from the plugin's wire `claude` flag (authoritative — note s1's claude pane has an
+// UNMARKED name, the content-detected case) or, for old plugins, the name marker. s2 has only a shell.
 const sessions = () => [
   {
     sid: 's1',
@@ -31,17 +33,20 @@ const sessions = () => [
       {
         tabId: 0,
         panes: [
-          { id: 1, command: 'claude', exited: false },
-          { id: 2, command: 'nvim', exited: false },
+          { id: 1, name: 'Pane #1', command: null, exited: false, claude: true },
+          { id: 2, name: 'nvim', command: null, exited: false, claude: false },
         ],
       },
     ],
   },
-  { sid: 's2', tabs: [{ tabId: 0, panes: [{ id: 1, command: 'zsh', exited: false }] }] },
+  {
+    sid: 's2',
+    tabs: [{ tabId: 0, panes: [{ id: 1, name: 'nordic@host:~', command: null, exited: false, claude: false }] }],
+  },
 ]
 
 describe('watchedPaneKeys', () => {
-  it('claude-only (default): just the claude panes', () => {
+  it('claude-only (default): just the claude panes — via the wire flag, command is null', () => {
     expect(watchedPaneKeys(sessions())).toEqual(['s1:0:1'])
   })
 
@@ -53,13 +58,42 @@ describe('watchedPaneKeys', () => {
     expect(watchedPaneKeys(sessions(), 'all')).toEqual(['s1:0:1', 's1:0:2', 's2:0:1'])
   })
 
+  it('old plugins without the flag: the name marker still identifies claude panes', () => {
+    const s = [
+      {
+        sid: 's1',
+        tabs: [
+          {
+            tabId: 0,
+            panes: [
+              { id: 1, name: '⠂ frozen task', command: null, exited: false },
+              { id: 2, name: '✳ Claude Code', command: null, exited: false },
+              { id: 3, name: 'zsh', command: null, exited: false },
+            ],
+          },
+        ],
+      },
+    ]
+    expect(watchedPaneKeys(s)).toEqual(['s1:0:1', 's1:0:2'])
+  })
+
+  it('legacy fallback: a claude command still counts when reported', () => {
+    const s = [{ sid: 's1', tabs: [{ tabId: 0, panes: [{ id: 1, command: 'claude', exited: false }] }] }]
+    expect(watchedPaneKeys(s)).toEqual(['s1:0:1'])
+  })
+
   it('excludes exited panes', () => {
-    const s = [{ sid: 's1', tabs: [{ tabId: 0, panes: [{ id: 1, command: 'claude', exited: true }] }] }]
+    const s = [
+      {
+        sid: 's1',
+        tabs: [{ tabId: 0, panes: [{ id: 1, name: '✳ done', command: null, exited: true, claude: true }] }],
+      },
+    ]
     expect(watchedPaneKeys(s)).toEqual([])
   })
 
-  it('is empty when no pane runs claude', () => {
-    const s = [{ sid: 's1', tabs: [{ tabId: 0, panes: [{ id: 1, command: 'nvim', exited: false }] }] }]
+  it('is empty when no pane runs claude — THE 2026-07-22 BUG: command-only matching saw this always', () => {
+    const s = [{ sid: 's1', tabs: [{ tabId: 0, panes: [{ id: 1, name: 'nvim', command: null, exited: false }] }] }]
     expect(watchedPaneKeys(s)).toEqual([])
   })
 })

@@ -76,6 +76,47 @@ pub fn is_thinking_marker(title: &str) -> bool {
         .is_some_and(is_braille_spinner)
 }
 
+/// Tail window scanned for the ADR-0054 content signatures — Claude Code's prompt row and footer
+/// live in the last few viewport lines; a bounded window keeps false positives from mid-pane text.
+const CONTENT_TAIL_LINES: usize = 15;
+
+fn tail_lines(viewport: &str) -> impl Iterator<Item = &str> {
+    let count = viewport.lines().count();
+    viewport
+        .lines()
+        .skip(count.saturating_sub(CONTENT_TAIL_LINES))
+}
+
+/// Turn-in-flight anchor (ADR-0054): Claude Code's footer shows `esc to interrupt` for exactly as
+/// long as a turn is running. Read from the live viewport every tick, it is ~1 s fresh — unlike the
+/// pane title, which Zellij only delivers on unrelated `SessionUpdate`s (measured minutes late).
+pub fn tail_shows_turn_in_flight(viewport: &str) -> bool {
+    tail_lines(viewport).any(|l| l.contains("esc to interrupt"))
+}
+
+/// Content-fallback identity (ADR-0054): the pane's visible tail carries BOTH Claude Code's prompt
+/// chrome (a line starting with `❯`, or the older `│ >` box row) AND a textual anchor
+/// (`esc to interrupt` while a turn runs / `? for shortcuts` at the idle prompt). The two-signature
+/// conjunction keeps a pane merely *displaying* Claude-like text (an editor on these docs) from
+/// matching; a residual false positive is cosmetic labeling, never a privacy change.
+pub fn is_claude_content(viewport: &str) -> bool {
+    let mut chrome = false;
+    let mut anchor = false;
+    for l in tail_lines(viewport) {
+        let t = l.trim_start();
+        if t.starts_with('❯') || t.starts_with("│ >") {
+            chrome = true;
+        }
+        if l.contains("esc to interrupt") || l.contains("? for shortcuts") {
+            anchor = true;
+        }
+        if chrome && anchor {
+            return true;
+        }
+    }
+    false
+}
+
 /// A live session with no attached clients → `session.detached`.
 pub fn detached(session_sid: &str) -> Attention {
     Attention {
@@ -210,6 +251,37 @@ mod tests {
         // Neither → not a claude pane.
         assert!(!is_claude_pane("nvim", Some("nvim")));
         assert!(!is_claude_pane("nvim", None));
+    }
+
+    #[test]
+    fn is_claude_content_matches_the_live_ui_tail() {
+        // Verbatim from a live `zellij action dump-screen` of a running turn (2026-07-22).
+        let ui = "· Bunning… (1m 12s · ↓ 7.0k tokens)\n  ⎿  Tip: Use /btw to ask a quick side question\n────\n❯ \n────\n  ⏵⏵ bypass permissions on (shift+tab to cycle) · esc to interrupt · ← 2 agents";
+        assert!(is_claude_content(ui));
+        assert!(tail_shows_turn_in_flight(ui));
+        // The older bordered input box + idle footer variant.
+        assert!(is_claude_content("╭────╮\n│ > \n╰────╯\n  ? for shortcuts"));
+        assert!(!tail_shows_turn_in_flight(
+            "╭────╮\n│ > \n╰────╯\n  ? for shortcuts"
+        ));
+    }
+
+    #[test]
+    fn is_claude_content_requires_both_signatures_in_the_tail() {
+        // Anchor text alone — a pane merely DISPLAYING docs that quote the UI — must not match.
+        assert!(!is_claude_content(
+            "ADR-0025 says the footer shows esc to interrupt while busy"
+        ));
+        // Chrome alone — a fancy shell prompt (`❯` is powerlevel10k's default) — must not match.
+        assert!(!is_claude_content("❯ ls\nsrc test\n❯ "));
+        // Both present but the anchor scrolled above the 15-line tail window → no match.
+        let scrolled = format!("esc to interrupt\n{}❯ ", "filler\n".repeat(20));
+        assert!(!is_claude_content(&scrolled));
+        assert!(!tail_shows_turn_in_flight(&format!(
+            "esc to interrupt\n{}",
+            "filler\n".repeat(20)
+        )));
+        assert!(!is_claude_content(""));
     }
 
     #[test]

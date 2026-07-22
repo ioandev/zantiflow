@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
+import { FilterNudge } from '../components/dashboard/FilterNudge'
 import { MachineCard } from '../components/dashboard/MachineCard'
 import { MachineDetail as MachineDetailView } from '../components/dashboard/MachineDetail'
 import { PaneRow } from '../components/dashboard/PaneRow'
@@ -289,5 +290,15 @@ describe('MachineDetail "Claude only" filter', () => {
     )
     expect(html).toContain('No Claude Code panes on this machine.')
     expect(html).not.toContain('python-here')
+  })
+})
+
+describe('FilterNudge (ADR-0053)', () => {
+  it('renders the filter hint with a troubleshooting link and a dismiss control', () => {
+    const html = renderToStaticMarkup(<FilterNudge onDismiss={() => {}} />)
+    expect(html).toContain('Not finding what you’re looking for? Check the filters at the top')
+    expect(html).toContain('https://ioandev.github.io/zantiflow/troubleshooting/')
+    expect(html).toContain('Troubleshooting guide')
+    expect(html).toContain('aria-label="Dismiss"')
   })
 })

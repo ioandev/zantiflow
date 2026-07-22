@@ -20,17 +20,21 @@ export function MachineDetail({
   attentions,
   anchorId,
   claudeOnly = false,
+  onRefreshClick,
 }: {
   detail: MD
   attentions: AttentionView[]
   anchorId: string
   claudeOnly?: boolean
+  /** Counted dashboard-wide for the repeated-refresh filter nudge (ADR-0053); busy clicks don't fire it. */
+  onRefreshClick?: () => void
 }) {
   const attn = new AttentionIndex(attentions)
   const now = useNow() // keep "updated Ns ago" / "last seen" ticking between snapshots
   const [refresh, setRefresh] = useState<{ busy: boolean; label: string }>({ busy: false, label: '↻ refresh' })
   const onRefresh = async () => {
     if (refresh.busy) return
+    onRefreshClick?.()
     setRefresh({ busy: true, label: 'refreshing…' })
     let label = '✓ requested'
     try {

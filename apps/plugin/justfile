@@ -1,0 +1,21 @@
+# zantiflow plugin (Rust → wasm32-wasip1) — dev tasks. Run `just` to list.
+# Mirrors README "Build & test"; cargo resolves `-p` via the workspace root, so recipes
+# work from this directory. The real-Zellij smoke check stays manual (throwaway session
+# ONLY — never touch the running Zellij; see README + CLAUDE.md).
+
+# List available recipes.
+default:
+    @just --list
+
+# Native unit tests (pure logic behind HostPort — no wasm toolchain involved).
+test:
+    cargo test -p zantiflow-plugin
+
+# Release .wasm artifact → ../../target/wasm32-wasip1/release/zantiflow_plugin.wasm
+build:
+    cargo build -p zantiflow-plugin --target wasm32-wasip1 --release
+
+# Lint native + wasm targets, warnings as errors.
+clippy:
+    cargo clippy -p zantiflow-plugin --all-targets -- -D warnings
+    cargo clippy -p zantiflow-plugin --target wasm32-wasip1 -- -D warnings

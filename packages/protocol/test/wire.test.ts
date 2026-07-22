@@ -41,6 +41,32 @@ describe('parseSnapshot (wire v4)', () => {
     if (r.ok) expect((r.snapshot as Record<string, unknown>).futureField).toBeUndefined()
   })
 
+  it('per-pane claude flag (ADR-0055) is optional additive — still v4', () => {
+    expect(parseSnapshot(valid).ok).toBe(true) // old plugins omit it
+    const pane = {
+      id: 1,
+      name: 'Pane #1',
+      command: null,
+      isFocused: true,
+      exited: false,
+      contentFingerprint: 'ab12',
+      claude: true,
+    }
+    const withFlag = structuredClone(valid)
+    withFlag.sessions[0].tabs[0].panes = [pane]
+    const r = parseSnapshot(withFlag)
+    expect(r.ok).toBe(true)
+    if (r.ok) expect(r.snapshot.sessions[0].tabs[0].panes[0].claude).toBe(true)
+  })
+
+  it('claudeActive (ADR-0051) is optional additive — still v4', () => {
+    expect(parseSnapshot(valid).ok).toBe(true) // old plugins omit it
+    const r = parseSnapshot({ ...valid, claudeActive: true })
+    expect(r.ok).toBe(true)
+    if (r.ok) expect(r.snapshot.claudeActive).toBe(true)
+    expect(parseSnapshot({ ...valid, claudeActive: 'yes' }).ok).toBe(false)
+  })
+
   it('rejects unknown-newer version', () => {
     const r = parseSnapshot({ ...valid, version: 5 })
     expect(r.ok).toBe(false)

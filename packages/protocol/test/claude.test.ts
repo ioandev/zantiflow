@@ -17,6 +17,15 @@ describe('isClaudePane', () => {
     expect(isClaudePane(pane('⠙ Fixing the parser'))).toBe(true)
   })
 
+  it('honors the wire verdict first when present (ADR-0055)', () => {
+    // Content-detected claude with an unmarked name — only the flag can identify it.
+    expect(isClaudePane({ name: 'Pane #1', command: null, claude: true })).toBe(true)
+    // The plugin said no — a marker-less shell stays a shell even with a claude-ish command string.
+    expect(isClaudePane({ name: 'zsh', command: 'claude-helper', claude: false })).toBe(false)
+    // Absent flag (old plugin) → marker/command fallbacks as before.
+    expect(isClaudePane({ name: '✳ Claude Code', command: null })).toBe(true)
+  })
+
   it('falls back to a claude command (confirm-only)', () => {
     expect(isClaudePane(pane('claude --resume', 'claude --resume'))).toBe(true)
     expect(isClaudePane(pane('some-title', '/usr/bin/Claude'))).toBe(true) // case-insensitive
