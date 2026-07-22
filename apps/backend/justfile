@@ -1,0 +1,45 @@
+# zantiflow backend — dev tasks. Run `just` to list.
+# `just dev` needs `.env` (copy `.env.example`; DATABASE_URL + TOKEN_SECRET required) and the
+# dev MariaDB up (`just db-up` — dedicated container on 127.0.0.1:3308, docker-compose.dev.yml).
+# The `just test` MariaDB integration tests need a Docker-compatible socket
+# (Podman here: `systemctl --user start podman.socket`) — without one they skip with a warning.
+
+# List available recipes.
+default:
+    @just --list
+
+# Start the dedicated dev MariaDB container (127.0.0.1:3308).
+db-up:
+    pnpm run db:up
+
+# Stop the dev MariaDB container.
+db-down:
+    pnpm run db:down
+
+# Apply pending Prisma migrations to the dev DB.
+db-migrate:
+    pnpm run db:migrate
+
+# Regenerate the Prisma client.
+db-generate:
+    pnpm run db:generate
+
+# Apply migrations, then run the server with hot-reload (tsx watch).
+dev:
+    pnpm run dev
+
+# Prisma generate + type-check + compile to dist/.
+build:
+    pnpm run build
+
+# Run the vitest suite (integration tests need the container socket up — see header).
+test:
+    pnpm run test
+
+# Send a notification through the REAL delivery path (dev) — e.g. `just notify claude.idle`.
+notify type="claude.idle" account="" machine="":
+    pnpm exec tsx --env-file=.env scripts/notify.ts {{type}} {{account}} {{machine}}
+
+# Serve the compiled build (node dist/index.js).
+start:
+    pnpm run start

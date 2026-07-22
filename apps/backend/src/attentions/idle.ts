@@ -18,7 +18,7 @@
 // genuinely closed session ages out — so filtering to non-stale rows distinguishes idle (fire) from
 // closed (drop, no false positive). All queries are scoped by `accountId` (IDOR).
 import type { PrismaClient } from '@prisma/client'
-import type { Attention as WireAttention } from '@zantiflow/protocol'
+import { isClaudePane, type Attention as WireAttention } from '@zantiflow/protocol'
 import { type ActivityMap, asActivityMap, paneKeyOf } from '../machines/activity'
 import { STALE_AFTER_MS } from '../machines/service'
 import { createForFired } from '../notifications/service'
@@ -44,11 +44,23 @@ const DEFAULT_SCOPE: PaneScope = 'claude-only'
 export const isClaudeCommand = (command: string | null | undefined): boolean =>
   !!command && command.toLowerCase().includes('claude')
 
+/**
+ * Is this stored pane a Claude pane? Delegates to the shared `isClaudePane` (ADR-0055): the plugin's
+ * wire `claude` verdict when present (authoritative — covers content-detected panes with unmarked
+ * names), else the name marker, else the command. NOT command-only: Zellij reports `command` as
+ * `null`, which is why command-only matching left this sweep with zero watched panes — `claude.idle`
+ * could never fire (the bug this replaces).
+ */
+const isClaudeStoredPane = (p: StoredPane): boolean =>
+  isClaudePane({ name: p.name ?? null, command: p.command ?? null, claude: p.claude })
+
 // Tolerant readers over the stored wire-v4 slice blob (JSON column, typed `unknown`).
 interface StoredPane {
   id?: number
+  name?: string | null
   command?: string | null
   exited?: boolean
+  claude?: boolean
 }
 interface StoredTab {
   tabId?: number
@@ -73,14 +85,14 @@ export const watchedPaneKeys = (sessions: StoredSession[], scope: PaneScope = DE
     // For 'claude-sessions', a session counts only if it holds at least one live claude pane.
     const sessionHasClaude =
       scope !== 'claude-sessions' ||
-      tabs.some((t) => (t.panes ?? []).some((p) => !p.exited && isClaudeCommand(p.command)))
+      tabs.some((t) => (t.panes ?? []).some((p) => !p.exited && isClaudeStoredPane(p)))
     for (const t of tabs) {
       const tabId = t.tabId
       if (typeof tabId !== 'number') continue
       for (const p of t.panes ?? []) {
         if (typeof p.id !== 'number' || p.exited) continue
         const include =
-          scope === 'all' ? true : scope === 'claude-sessions' ? sessionHasClaude : isClaudeCommand(p.command)
+          scope === 'all' ? true : scope === 'claude-sessions' ? sessionHasClaude : isClaudeStoredPane(p)
         if (include) keys.push(paneKeyOf(sid, tabId, p.id))
       }
     }

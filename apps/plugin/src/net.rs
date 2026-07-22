@@ -51,6 +51,7 @@ mod tests {
             pane_output: false,
             control_long_poll: false,
             hostname_enabled: true,
+            debug: false,
             warnings: vec![],
         }
     }
@@ -73,6 +74,7 @@ mod tests {
             },
             attentions: vec![],
             sessions: vec![],
+            claude_active: false,
         }
     }
 

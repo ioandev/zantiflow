@@ -9,12 +9,21 @@ import type { PrismaClient } from '@prisma/client'
 import type { ControlResponse } from '@zantiflow/protocol'
 import { pendingRequests } from '../output/service'
 import type { Presence } from '../presence/service'
+import { effectiveTier, type Tier } from '../tiers/service'
 import type { ControlWaiters } from './waiters'
 
 /** Upper bound on how long a long-poll response is held (ADR-0029). Must stay below the 60 s
  *  read-filter so the liveness touch (which happens once per request) can't lapse, and comfortably
  *  under typical proxy read timeouts. Requests asking for longer are clamped to this. */
 export const MAX_WAIT_MS = 25_000
+
+/** Tier-paced heartbeat interval handed to the plugin (ADR-0051): how long it may stay send-silent
+ *  before re-affirming its state with a full snapshot. Server-owned so tier changes (promo expiry)
+ *  apply on the next control poll with no plugin involvement. */
+export const HEARTBEAT_SEC_PRO = 30
+export const HEARTBEAT_SEC_FREE = 300
+
+export const heartbeatSeconds = (tier: Tier): number => (tier === 'pro' ? HEARTBEAT_SEC_PRO : HEARTBEAT_SEC_FREE)
 
 /**
  * Handle one control poll. Returns null when the machine is not owned by the token's account
@@ -38,6 +47,14 @@ export const handleControl = async (
   // A token may only touch its own account's machine — never register/hijack another's (audit B7).
   const owned = await prisma.machine.findFirst({ where: { id: machineId, accountId }, select: { id: true } })
   if (!owned) return null
+
+  // The account's tier prices the heartbeat interval (ADR-0051); a missing row (never expected —
+  // the token FK guarantees the account) degrades to the free interval rather than failing the poll.
+  const account = await prisma.account.findUnique({
+    where: { id: accountId },
+    select: { tier: true, tierExpiresAt: true },
+  })
+  const heartbeatSec = heartbeatSeconds(account ? effectiveTier(account, now) : 'free')
 
   // Liveness touch. `Machine.lastSeenAt` keeps the machine "online"; `Snapshot.receivedAt` keeps each
   // still-reported session inside the read-filter without re-sending the whole tree; `PaneActivity`
@@ -64,6 +81,7 @@ export const handleControl = async (
     pendingOutput: (await pendingRequests(prisma, accountId, at)).filter((r) => r.machineId === machineId),
     viewers: { active: presence.isWatching(accountId) },
     refreshSeq: presence.refreshSeq(machineId),
+    heartbeatSec,
   })
 
   const result = await compute(now)

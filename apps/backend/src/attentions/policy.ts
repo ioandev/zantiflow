@@ -26,6 +26,8 @@ export const thresholdSeconds = (type: string, tier: string): number => {
 
 /** Anti-spam: a given target may fire at most once per this window. */
 export const cooldownSeconds = (type: string): number =>
-  // `machine.offline` should fire ONCE per disconnect, not every 5 min a machine stays down — a long
-  // cooldown makes the single episode fire once; a reconnect clears the row so the next drop fires anew.
-  type === 'machine.offline' ? 24 * 3600 : 300
+  // The MACHINE-LEVEL attentions fire ONCE per episode, not every 5 min the condition persists —
+  // idle/offline are steady states, so a short cooldown nags forever (ADR-0028; ADR-0056 for
+  // claude.idle). A long cooldown makes the single episode fire once; the clear-on-resume /
+  // reconnect DELETES the row, resetting the cooldown so the next episode fires anew.
+  type === 'machine.offline' || type === 'claude.idle' ? 24 * 3600 : 300

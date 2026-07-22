@@ -10,6 +10,7 @@ pub mod attentions;
 pub mod cadence;
 pub mod config;
 pub mod control;
+pub mod debuglog;
 pub mod fingerprint;
 pub mod host;
 pub mod model;

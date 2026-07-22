@@ -41,6 +41,11 @@ pub struct PluginConfig {
     /// needs the Zellij `RunCommands` permission. OFF by default (ADR-0024): the permission is only
     /// requested — and the hostname only read and sent — when this is on AND `machine == Real`.
     pub hostname_enabled: bool,
+    /// Debug logging (ADR-0049): OFF by default. When on, the plugin emits transition-only diagnostic
+    /// lines (attention onsets/clears, ingest sends + a contents summary, claude-pane activity) via
+    /// `HostPort::log` (plugin stderr → Zellij's own `zellij.log`). Local-only; never the token or
+    /// pane content.
+    pub debug: bool,
     /// Non-fatal parse/validation warnings (fail-closed decisions) to surface to the user.
     pub warnings: Vec<String>,
 }
@@ -216,6 +221,15 @@ pub fn parse_config(raw: &BTreeMap<String, String>) -> PluginConfig {
             false
         }),
     };
+    // Debug logging is opt-in and quiet by default (ADR-0049); an invalid value stays OFF.
+    let debug = match raw.get("debug") {
+        None => false,
+        Some(v) => parse_bool(v).unwrap_or_else(|| {
+            warnings.push(format!("invalid debug '{v}' — defaulting OFF"));
+            false
+        }),
+    };
+
     // Asking for the real machine name without enabling the lookup is a silent no-op (machine reports
     // as hidden). Warn only when `machine_name=real` was set explicitly, so the default stays quiet.
     if !hostname_enabled
@@ -241,6 +255,7 @@ pub fn parse_config(raw: &BTreeMap<String, String>) -> PluginConfig {
         pane_output,
         control_long_poll,
         hostname_enabled,
+        debug,
         warnings,
     }
 }
@@ -410,6 +425,21 @@ mod tests {
         assert!(c.pane_output);
         // whitespace-only token is treated as absent (pairing mode)
         assert_eq!(cfg(&[("token", "   ")]).token, None);
+    }
+
+    #[test]
+    fn debug_defaults_off_and_invalid_values_stay_off() {
+        // Quiet by default (ADR-0049) — and absent from the default-config warning set.
+        let c = cfg(&[("server_url", "https://x")]);
+        assert!(!c.debug);
+        assert!(c.warnings.is_empty());
+        // Explicit on/off parse like every other bool key.
+        assert!(cfg(&[("debug", "on"), ("server_url", "https://x")]).debug);
+        assert!(!cfg(&[("debug", "off"), ("server_url", "https://x")]).debug);
+        // Invalid → OFF with a warning (default, not fail-closed — it's not a privacy key).
+        let bad = cfg(&[("debug", "loud"), ("server_url", "https://x")]);
+        assert!(!bad.debug);
+        assert!(bad.warnings.iter().any(|w| w.contains("debug")));
     }
 
     #[test]

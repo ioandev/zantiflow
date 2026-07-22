@@ -32,6 +32,15 @@ pub const IDLE_FLOOR_TICKS: u64 = 30;
 /// While any attention is active, re-send at least this often so the backend keeps the episode alive
 /// and fires (and re-fires after cooldown) within the ~2 min budget.
 pub const KEEPALIVE_TICKS: u64 = 30;
+/// Heartbeat floor (ADR-0051): re-send a full snapshot after this much send-silence even with NO
+/// change, bounding backend staleness and self-healing a lost fire-and-forget ingest. The backend
+/// prices the real interval by tier via the control response (30 pro / 300 free); this default IS
+/// the free interval, so a plugin that never hears back is never more generous than the account earns.
+pub const HEARTBEAT_DEFAULT_TICKS: u64 = 300;
+/// Clamp bounds on a backend-supplied heartbeat interval: a buggy/hostile backend can neither induce
+/// near-1 s spam nor stretch the bound past an hour.
+pub const HEARTBEAT_MIN_TICKS: u64 = 10;
+pub const HEARTBEAT_MAX_TICKS: u64 = 3600;
 
 /// Whether to issue a control poll this wall-tick (ADR-0026/0029). Pure so it is unit-tested off the
 /// wasm target; `plugin.rs` only feeds it state and acts on the boolean.
@@ -59,8 +68,38 @@ pub struct Tick {
     pub attention_active: bool,
 }
 
+/// WHY the send-gate decided to POST this tick — one variant per [`SendGate::decide_reason`] branch.
+/// Only consumed by the ADR-0049 debug log line; the send behavior itself is unchanged.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SendReason {
+    /// First-ever send after load.
+    First,
+    /// Explicit one-shot force: cold-start re-arm, unwatched→watched edge, or a manual refresh.
+    Forced,
+    /// Structural/attention change past the onset debounce.
+    Notable,
+    /// Pane-content change past the presence-dependent coalesce floor.
+    Content,
+    /// Attention-active keepalive.
+    Keepalive,
+    /// Tier-paced no-change heartbeat (ADR-0051) — the weakest reason, only when nothing else fired.
+    Heartbeat,
+}
+
+impl SendReason {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            SendReason::First => "first",
+            SendReason::Forced => "forced",
+            SendReason::Notable => "notable",
+            SendReason::Content => "content",
+            SendReason::Keepalive => "keepalive",
+            SendReason::Heartbeat => "heartbeat",
+        }
+    }
+}
+
 /// Remembers what was last sent so each tick's decision is O(1). Owned by the plugin across ticks.
-#[derive(Default)]
 pub struct SendGate {
     last_salient: Option<u64>,
     last_structural: Option<u64>,
@@ -68,9 +107,33 @@ pub struct SendGate {
     watched: bool,
     /// One-shot: forces the next decision to send (cold-start / unwatched→watched / manual refresh).
     force: bool,
+    /// Max send-silence before a no-change heartbeat fires (ADR-0051), in wall-ticks (~seconds).
+    /// Starts at the free-tier default; re-priced by each control response via [`set_heartbeat_secs`].
+    ///
+    /// [`set_heartbeat_secs`]: SendGate::set_heartbeat_secs
+    heartbeat_ticks: u64,
+}
+
+impl Default for SendGate {
+    fn default() -> Self {
+        SendGate {
+            last_salient: None,
+            last_structural: None,
+            last_send_wall: 0,
+            watched: false,
+            force: false,
+            heartbeat_ticks: HEARTBEAT_DEFAULT_TICKS,
+        }
+    }
 }
 
 impl SendGate {
+    /// Apply the backend's tier-priced heartbeat interval (seconds ≈ wall-ticks), clamped so a
+    /// misbehaving backend can't turn the heartbeat into ~1 s spam or push it past an hour.
+    pub fn set_heartbeat_secs(&mut self, secs: u64) {
+        self.heartbeat_ticks = secs.clamp(HEARTBEAT_MIN_TICKS, HEARTBEAT_MAX_TICKS);
+    }
+
     /// Force a send at the next tick (manual refresh, or any explicit reason).
     pub fn force(&mut self) {
         self.force = true;
@@ -94,9 +157,20 @@ impl SendGate {
     ///
     /// [`record_sent`]: SendGate::record_sent
     pub fn decide(&self, t: &Tick) -> bool {
+        self.decide_reason(t).is_some()
+    }
+
+    /// [`decide`], but naming WHICH branch fired (`None` = don't send) so the ADR-0049 debug log can
+    /// report why a snapshot went out. Same logic, same order — `decide` delegates here.
+    ///
+    /// [`decide`]: SendGate::decide
+    pub fn decide_reason(&self, t: &Tick) -> Option<SendReason> {
         // First-ever send, or an explicit force (cold-start / unwatched→watched / refresh).
-        if self.last_salient.is_none() || self.force {
-            return true;
+        if self.last_salient.is_none() {
+            return Some(SendReason::First);
+        }
+        if self.force {
+            return Some(SendReason::Forced);
         }
         let elapsed = t.wall_tick.saturating_sub(self.last_send_wall);
         let notable = self.last_structural != Some(t.structural); // attention onset/clear or tree change
@@ -105,7 +179,7 @@ impl SendGate {
         // A notable change is latency-sensitive (it may start/stop a notification) → send promptly,
         // bypassing the coalesce floor after only a short debounce.
         if notable && elapsed >= ONSET_DEBOUNCE_TICKS {
-            return true;
+            return Some(SendReason::Notable);
         }
         // A pure content change coalesces to the presence-dependent floor. Nobody watching + no change
         // ⇒ neither branch fires ⇒ we send nothing (the core win).
@@ -116,14 +190,19 @@ impl SendGate {
                 IDLE_FLOOR_TICKS
             };
             if elapsed >= floor {
-                return true;
+                return Some(SendReason::Content);
             }
         }
         // Keepalive while an attention is active so the backend's ingest-driven engine keeps firing.
         if t.attention_active && elapsed >= KEEPALIVE_TICKS {
-            return true;
+            return Some(SendReason::Keepalive);
         }
-        false
+        // Tier-paced heartbeat (ADR-0051), the weakest reason: bound send-silence even with no change
+        // at all, so backend staleness is capped and a lost fire-and-forget ingest self-heals.
+        if elapsed >= self.heartbeat_ticks {
+            return Some(SendReason::Heartbeat);
+        }
+        None
     }
 
     /// Record that a snapshot with this tick's signatures was sent; clears the one-shot force.
@@ -220,6 +299,88 @@ mod tests {
         // Nothing changes, but the attention stays active → re-send at the keepalive interval.
         assert!(!g.decide(&tick(1 + KEEPALIVE_TICKS - 1, 100, 10, true)));
         assert!(g.decide(&tick(1 + KEEPALIVE_TICKS, 100, 10, true)));
+    }
+
+    #[test]
+    fn decide_reason_names_the_branch_that_fired() {
+        let mut g = SendGate::default();
+        let first = tick(1, 100, 10, false);
+        assert_eq!(g.decide_reason(&first), Some(SendReason::First));
+        g.record_sent(&first);
+        // No change → no reason (and decide agrees).
+        assert_eq!(g.decide_reason(&tick(2, 100, 10, false)), None);
+        assert!(!g.decide(&tick(2, 100, 10, false)));
+        // Structural change past the debounce → Notable.
+        assert_eq!(
+            g.decide_reason(&tick(1 + ONSET_DEBOUNCE_TICKS, 105, 11, false)),
+            Some(SendReason::Notable)
+        );
+        // Pure content change at the idle floor → Content.
+        assert_eq!(
+            g.decide_reason(&tick(1 + IDLE_FLOOR_TICKS, 101, 10, false)),
+            Some(SendReason::Content)
+        );
+        // Unchanged but attention-active at the keepalive interval → Keepalive.
+        assert_eq!(
+            g.decide_reason(&tick(1 + KEEPALIVE_TICKS, 100, 10, true)),
+            Some(SendReason::Keepalive)
+        );
+        // A one-shot force wins over "no change".
+        g.force();
+        assert_eq!(
+            g.decide_reason(&tick(3, 100, 10, false)),
+            Some(SendReason::Forced)
+        );
+    }
+
+    #[test]
+    fn heartbeat_bounds_send_silence_at_the_free_default() {
+        let mut g = SendGate::default();
+        let first = tick(1, 100, 10, false);
+        g.decide(&first);
+        g.record_sent(&first);
+        // Idle, unwatched, unchanged: silent right up to the 300-tick floor…
+        assert!(!g.decide(&tick(1 + HEARTBEAT_DEFAULT_TICKS - 1, 100, 10, false)));
+        // …then the heartbeat fires, with its own (weakest) reason.
+        assert_eq!(
+            g.decide_reason(&tick(1 + HEARTBEAT_DEFAULT_TICKS, 100, 10, false)),
+            Some(SendReason::Heartbeat)
+        );
+    }
+
+    #[test]
+    fn backend_priced_heartbeat_applies_and_the_clock_resets_on_every_send() {
+        let mut g = SendGate::default();
+        g.set_heartbeat_secs(30); // the pro interval, as the control response prices it
+        let first = tick(1, 100, 10, false);
+        g.decide(&first);
+        g.record_sent(&first);
+        assert!(!g.decide(&tick(30, 100, 10, false))); // 29 elapsed → not yet
+        let hb = tick(31, 100, 10, false);
+        assert_eq!(g.decide_reason(&hb), Some(SendReason::Heartbeat));
+        g.record_sent(&hb);
+        // The next heartbeat counts from the LAST send, whatever its reason.
+        assert!(!g.decide(&tick(60, 100, 10, false)));
+        assert_eq!(
+            g.decide_reason(&tick(61, 100, 10, false)),
+            Some(SendReason::Heartbeat)
+        );
+    }
+
+    #[test]
+    fn heartbeat_interval_is_clamped_against_a_misbehaving_backend() {
+        let mut g = SendGate::default();
+        let first = tick(1, 100, 10, false);
+        g.decide(&first);
+        g.record_sent(&first);
+        // A 1 s interval would be spam — clamped up to the 10-tick floor.
+        g.set_heartbeat_secs(1);
+        assert!(!g.decide(&tick(1 + HEARTBEAT_MIN_TICKS - 1, 100, 10, false)));
+        assert!(g.decide(&tick(1 + HEARTBEAT_MIN_TICKS, 100, 10, false)));
+        // An absurdly long interval is clamped down to the 1 h ceiling.
+        g.set_heartbeat_secs(1_000_000);
+        assert!(!g.decide(&tick(1 + HEARTBEAT_MAX_TICKS - 1, 100, 10, false)));
+        assert!(g.decide(&tick(1 + HEARTBEAT_MAX_TICKS, 100, 10, false)));
     }
 
     #[test]

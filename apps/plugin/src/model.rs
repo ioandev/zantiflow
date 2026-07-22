@@ -60,6 +60,10 @@ pub struct Pane {
     pub is_focused: bool,
     pub exited: bool,
     pub content_fingerprint: String,
+    /// Additive optional on the wire (ADR-0055, still v4): this plugin's Claude-pane verdict —
+    /// title marker OR live-content signatures (ADR-0054). Authoritative for the backend's
+    /// `claude.idle` scope; sent for every pane so the backend never re-derives identity.
+    pub claude: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -119,6 +123,9 @@ pub struct SnapshotV4 {
     pub machine: MachineIdentity,
     pub attentions: Vec<Attention>,
     pub sessions: Vec<Session>,
+    /// Additive optional on the wire (ADR-0051, still v4): ≥1 claude pane THIS instance observes is
+    /// producing output. Own-session view — the backend merges instances per machine (ADR-0027).
+    pub claude_active: bool,
 }
 
 #[cfg(test)]
@@ -161,14 +168,17 @@ mod tests {
                         is_focused: true,
                         exited: false,
                         content_fingerprint: "ab12".into(),
+                        claude: true,
                     }],
                 }],
             }],
+            claude_active: true,
         };
         let v: serde_json::Value = serde_json::to_value(&snap).unwrap();
         assert_eq!(v["version"], 4);
         assert_eq!(v["machineId"], "m-1");
         assert_eq!(v["capturedAtTick"], 42);
+        assert_eq!(v["claudeActive"], true); // additive optional wire key (ADR-0051)
         assert_eq!(v["privacy"]["sessionNames"], "send");
         assert_eq!(v["privacy"]["paneNames"], "hidden");
         assert_eq!(v["machine"]["source"], "alias");
@@ -178,6 +188,7 @@ mod tests {
         let pane = &v["sessions"][0]["tabs"][0]["panes"][0];
         assert_eq!(pane["name"], serde_json::Value::Null);
         assert_eq!(pane["isFocused"], true);
+        assert_eq!(pane["claude"], true); // additive optional wire key (ADR-0055)
         assert_eq!(pane["contentFingerprint"], "ab12");
     }
 }

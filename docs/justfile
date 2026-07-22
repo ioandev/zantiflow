@@ -1,0 +1,17 @@
+# zantiflow docs (Starlight/Astro) — dev tasks. Run `just` to list.
+
+# List available recipes.
+default:
+    @just --list
+
+# Run the docs dev server.
+dev:
+    pnpm run dev
+
+# Static build (this IS the docs check — there are no unit tests).
+build:
+    pnpm run build
+
+# Preview the built site locally.
+preview:
+    pnpm run preview

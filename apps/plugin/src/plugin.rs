@@ -12,7 +12,7 @@ use crate::fingerprint;
 use crate::host::{HostPort, ObservedPane, ObservedSession, ObservedTab};
 use crate::model::AttentionState;
 use crate::scrub::Scrubber;
-use crate::{cadence, control, net, output, pairing, snapshot};
+use crate::{cadence, control, debuglog, net, output, pairing, snapshot};
 
 const TICK_SECS: f64 = 1.0;
 const HOSTNAME_CTX: &str = "zantiflow_hostname";
@@ -192,6 +192,9 @@ pub struct ZantiflowPlugin {
     /// Cross-tick per-pane content-freshness (ADR-0025 fix): lets `claude.thinking` require a pane to
     /// be still producing output, so a spinner glyph Claude Code freezes on a finished pane clears.
     pane_activity: crate::activity::PaneActivity,
+    /// Transition differ for the opt-in `debug` log lines (ADR-0049). Only fed while `debug` is on,
+    /// so enabling it mid-run dumps the then-current state as an initial burst (by design).
+    debug_state: debuglog::DebugState,
 }
 
 fn to_observed(sessions: Vec<SessionInfo>) -> Vec<ObservedSession> {
@@ -396,7 +399,7 @@ impl ZantiflowPlugin {
         // Local sampling stays ~1 s: building the snapshot reads each pane's scrollback (the activity
         // fingerprint) and scans for attentions. Only the SEND below is conditional. The wall-tick +
         // freshness tracker let the thinking detector tell a live turn from a frozen spinner glyph.
-        let mut snap = snapshot::build_snapshot(
+        let built = snapshot::build_snapshot_observed(
             &self.host,
             &config,
             &self.machine_id,
@@ -405,6 +408,15 @@ impl ZantiflowPlugin {
             self.wall_tick,
             &mut self.pane_activity,
         );
+        let mut snap = built.snap;
+
+        // Opt-in debug logging (ADR-0049): transition-only lines — attention onsets/clears and the
+        // claude activity picture across sessions. An unchanged tick emits nothing.
+        if config.debug {
+            for line in self.debug_state.tick_lines(&snap.attentions, &built.panes) {
+                self.host.log(&line);
+            }
+        }
 
         // Remember which sid is our own session — the only one whose panes we can capture. Drives the
         // per-instance filter in `deliver_pending` so each session's plugin serves only its own panes.
@@ -431,10 +443,20 @@ impl ZantiflowPlugin {
             structural: sig.structural,
             attention_active,
         };
-        if self.send_gate.decide(&tick) {
+        if let Some(reason) = self.send_gate.decide_reason(&tick) {
             self.tick += 1;
             snap.captured_at_tick = self.tick;
             if let Some(req) = net::build_ingest_request(&config, &snap) {
+                // One line per ACTUAL POST: why it fired + what the wire contains (ADR-0049),
+                // followed by the per-pane title audit lines (ADR-0052) showing what the claude
+                // detector saw this tick.
+                if config.debug {
+                    self.host
+                        .log(&debuglog::ingest_line(self.tick, reason, &snap, req.body.len()));
+                    for line in debuglog::pane_title_lines(&built.panes) {
+                        self.host.log(&line);
+                    }
+                }
                 self.host.http_post(
                     &req.url,
                     req.headers,
@@ -505,6 +527,11 @@ impl ZantiflowPlugin {
         };
         // Presence drives the send cadence; a rising unwatched→watched edge forces a fresh send.
         self.send_gate.set_watched(resp.watched());
+        // Tier-priced heartbeat interval (ADR-0051): 30 s pro / 300 s free, clamped in the gate. An
+        // older backend omits it and the conservative 300 s default stands.
+        if let Some(secs) = resp.heartbeat_sec {
+            self.send_gate.set_heartbeat_secs(secs);
+        }
         // A bumped refresh sequence (manual refresh button) forces one snapshot on the next tick.
         if resp.refresh_seq > self.last_refresh_seq {
             self.last_refresh_seq = resp.refresh_seq;
@@ -610,6 +637,10 @@ impl ZellijPlugin for ZantiflowPlugin {
         let mut config = parse_config(&configuration);
         for w in &config.warnings {
             self.host.log(w);
+        }
+        if config.debug {
+            self.host
+                .log("debug logging ON (ADR-0049): attention transitions, ingest sends, claude activity — set debug=off to quiet");
         }
         // Effective token: explicit config wins; otherwise reuse a token minted by a previous
         // device pairing (persisted in /cache, shared across sessions). No token → pairing (ADR-0012).
@@ -759,9 +790,17 @@ impl ZellijPlugin for ZantiflowPlugin {
             }
             Event::PluginConfigurationChanged(new_config) => {
                 // Settings take effect without a restart (FINDINGS §9).
+                let was_debug = self.config.as_ref().is_some_and(|c| c.debug);
                 let mut config = parse_config(&new_config);
                 for w in &config.warnings {
                     self.host.log(w);
+                }
+                // Log the debug-flag edge itself (ADR-0049) so the log shows when verbosity changed.
+                if config.debug && !was_debug {
+                    self.host
+                        .log("debug logging ON (ADR-0049): attention transitions, ingest sends, claude activity — set debug=off to quiet");
+                } else if !config.debug && was_debug {
+                    self.host.log("debug logging OFF");
                 }
                 // Preserve a token minted by pairing (persisted in /cache) across live config changes.
                 if config.token.is_none() {

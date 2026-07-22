@@ -17,8 +17,10 @@ import {
 } from '@/lib/api'
 import { subscribeStream } from '@/lib/sse'
 import { coerceSortMode, machineLastActiveMs, sortMachines, type SortMode } from '@/lib/machineView'
+import { checkReloadNudge, recordRefreshClick } from '@/lib/refreshNudge'
 import type { AttentionView, MachineDetail, MachineSummary, Me, NotificationView } from '@/lib/types'
 import { TopBar } from '@/components/TopBar'
+import { FilterNudge } from '@/components/dashboard/FilterNudge'
 import { MachineCard } from '@/components/dashboard/MachineCard'
 import { MachineDetail as MachineDetailView } from '@/components/dashboard/MachineDetail'
 import { SentNotifications } from '@/components/dashboard/SentNotifications'
@@ -40,6 +42,27 @@ export default function Dashboard() {
   const [claudeOnly, setClaudeOnly] = useState(true)
   const known = useRef<Set<string>>(new Set())
   const prefsLoaded = useRef(false)
+  // Repeated manual refreshes usually mean a FILTER is hiding what the user expects (ADR-0053) —
+  // nudge them toward the toolbar, at most once per page load.
+  const refreshClicks = useRef<number[]>([])
+  const nudged = useRef(false)
+  const [showNudge, setShowNudge] = useState(false)
+  const onRefreshClick = useCallback(() => {
+    const { times, nudge } = recordRefreshClick(refreshClicks.current, Date.now())
+    refreshClicks.current = times
+    if (nudge && !nudged.current) {
+      nudged.current = true
+      setShowNudge(true)
+    }
+  }, [])
+  // Second trigger, same nudge: the 2nd BROWSER reload (F5/⌘R) of this tab within the window —
+  // reload-to-make-it-appear is the same frustration as hammering the ↻ button.
+  useEffect(() => {
+    if (checkReloadNudge() && !nudged.current) {
+      nudged.current = true
+      setShowNudge(true)
+    }
+  }, [])
 
   // Toolbar preferences persist across reloads. The write effect is declared FIRST so that on mount it
   // runs while `prefsLoaded` is still false and skips — never clobbering a stored choice with the
@@ -244,11 +267,14 @@ export default function Dashboard() {
               attentions={attnByMachine.get(m.id) ?? []}
               anchorId={anchorFor(m.id)}
               claudeOnly={claudeOnly}
+              onRefreshClick={onRefreshClick}
             />
           ) : null
         })}
 
         <SentNotifications notifications={notifications} />
+
+        {showNudge && <FilterNudge onDismiss={() => setShowNudge(false)} />}
 
         {machines.length > 0 && (
           <p className="note">

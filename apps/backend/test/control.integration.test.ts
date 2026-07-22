@@ -134,7 +134,7 @@ suite('control channel (testcontainers MariaDB)', () => {
 
     const res = await control(a.secret, machineId, ['live'])
     expect(res.status).toBe(200)
-    expect(res.body).toEqual({ pendingOutput: [], viewers: { active: false }, refreshSeq: 0 })
+    expect(res.body).toEqual({ pendingOutput: [], viewers: { active: false }, refreshSeq: 0, heartbeatSec: 300 })
 
     const machine = await prisma.machine.findUnique({ where: { id: machineId } })
     expect(machine!.lastSeenAt.getTime()).toBeGreaterThan(Date.now() - 60_000) // freshly stamped
@@ -161,6 +161,18 @@ suite('control channel (testcontainers MariaDB)', () => {
     const res = await control(a.secret, m1, [])
     expect(res.status).toBe(200)
     expect(res.body.pendingOutput).toEqual([{ machineId: m1, sessionSid: 'sA', tabId: 0, paneId: 5 }])
+  })
+
+  it('prices the heartbeat interval by tier — 300 s free, 30 s pro (ADR-0051)', async () => {
+    const a = await actor()
+    const machineId = await seedMachine(a.accountId, new Date())
+    expect((await control(a.secret, machineId, [])).body.heartbeatSec).toBe(300)
+    // effectiveTier is pro while tierExpiresAt is in the future — the next poll reprices itself.
+    await prisma.account.update({
+      where: { id: a.accountId },
+      data: { tier: 'pro', tierExpiresAt: new Date(Date.now() + 86_400_000) },
+    })
+    expect((await control(a.secret, machineId, [])).body.heartbeatSec).toBe(30)
   })
 
   it('reflects viewer presence (a dashboard read) and the refresh button bumps refreshSeq', async () => {

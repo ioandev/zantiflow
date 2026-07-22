@@ -9,6 +9,11 @@
 export interface ClaudePaneLike {
   name: string | null
   command: string | null
+  /** The plugin's own detection verdict (ADR-0055): title marker OR live-content signatures
+   *  (ADR-0054). When present it is authoritative — it covers panes the backend cannot classify
+   *  from the stored name at all (a content-detected Claude named `"Pane #1"`). Optional: old
+   *  plugins omit it. */
+  claude?: boolean
 }
 
 const CLAUDE_SPARKLE = 0x2733 // ✳ (idle)
@@ -35,8 +40,10 @@ export function isThinkingMarker(name: string | null): boolean {
   return cp >= BRAILLE_MIN && cp <= BRAILLE_MAX
 }
 
-/** True when a pane runs Claude Code: the reliable name marker, or a `claude` command as a fallback
- *  (confirm-only — a redacted/null command can't exclude). */
+/** True when a pane runs Claude Code: the plugin's wire verdict when present (ADR-0055 —
+ *  authoritative, covers content-detected panes with unmarked names), else the name marker, else a
+ *  `claude` command as a fallback (confirm-only — a redacted/null command can't exclude). */
 export function isClaudePane(pane: ClaudePaneLike): boolean {
+  if (pane.claude !== undefined) return pane.claude
   return hasClaudeMarker(pane.name) || !!pane.command?.toLowerCase().includes('claude')
 }
