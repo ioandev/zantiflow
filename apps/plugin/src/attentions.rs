@@ -82,7 +82,9 @@ const CONTENT_TAIL_LINES: usize = 15;
 
 fn tail_lines(viewport: &str) -> impl Iterator<Item = &str> {
     let count = viewport.lines().count();
-    viewport.lines().skip(count.saturating_sub(CONTENT_TAIL_LINES))
+    viewport
+        .lines()
+        .skip(count.saturating_sub(CONTENT_TAIL_LINES))
 }
 
 /// Turn-in-flight anchor (ADR-0054): Claude Code's footer shows `esc to interrupt` for exactly as
@@ -259,13 +261,17 @@ mod tests {
         assert!(tail_shows_turn_in_flight(ui));
         // The older bordered input box + idle footer variant.
         assert!(is_claude_content("╭────╮\n│ > \n╰────╯\n  ? for shortcuts"));
-        assert!(!tail_shows_turn_in_flight("╭────╮\n│ > \n╰────╯\n  ? for shortcuts"));
+        assert!(!tail_shows_turn_in_flight(
+            "╭────╮\n│ > \n╰────╯\n  ? for shortcuts"
+        ));
     }
 
     #[test]
     fn is_claude_content_requires_both_signatures_in_the_tail() {
         // Anchor text alone — a pane merely DISPLAYING docs that quote the UI — must not match.
-        assert!(!is_claude_content("ADR-0025 says the footer shows esc to interrupt while busy"));
+        assert!(!is_claude_content(
+            "ADR-0025 says the footer shows esc to interrupt while busy"
+        ));
         // Chrome alone — a fancy shell prompt (`❯` is powerlevel10k's default) — must not match.
         assert!(!is_claude_content("❯ ls\nsrc test\n❯ "));
         // Both present but the anchor scrolled above the 15-line tail window → no match.

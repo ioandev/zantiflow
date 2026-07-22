@@ -40,9 +40,7 @@ export const isPageReload = (): boolean => {
  */
 export const checkReloadNudge = (
   now: number = Date.now(),
-  storage: Pick<Storage, 'getItem' | 'setItem'> | null = typeof sessionStorage === 'undefined'
-    ? null
-    : sessionStorage,
+  storage: Pick<Storage, 'getItem' | 'setItem'> | null = typeof sessionStorage === 'undefined' ? null : sessionStorage,
   reload: boolean = isPageReload(),
 ): boolean => {
   if (!reload || !storage) return false

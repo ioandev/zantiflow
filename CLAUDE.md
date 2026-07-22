@@ -241,6 +241,10 @@ console render survives only as an optional dev/debug view; the read API + websi
   change a decision, add a new ADR and add a forward-pointer to the old one (see how ADR-0001 points
   to ADR-0002). Keep the `adrs/README.md` index up to date.
 - **Plans** live under `plans/`.
+- **`COMMIT.md`** — when asked to create `COMMIT.md`, these rules always apply: it's a root-level
+  scratch file describing what the pending commit is about, written **without splitting lines**
+  (never hard-wrap; each paragraph/bullet is one single line). It is **gitignored** and must never
+  be committed.
 - **License:** this project's default license is **Apache-2.0** — new code, apps, and packages ship
   under it unless stated otherwise. (Exception: the vendored `@zantiflow/oauth*` packages under
   `packages/` retain their upstream **MIT** license — see ADR-0004.)

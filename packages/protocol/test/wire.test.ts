@@ -43,7 +43,15 @@ describe('parseSnapshot (wire v4)', () => {
 
   it('per-pane claude flag (ADR-0055) is optional additive — still v4', () => {
     expect(parseSnapshot(valid).ok).toBe(true) // old plugins omit it
-    const pane = { id: 1, name: 'Pane #1', command: null, isFocused: true, exited: false, contentFingerprint: 'ab12', claude: true }
+    const pane = {
+      id: 1,
+      name: 'Pane #1',
+      command: null,
+      isFocused: true,
+      exited: false,
+      contentFingerprint: 'ab12',
+      claude: true,
+    }
     const withFlag = structuredClone(valid)
     withFlag.sessions[0].tabs[0].panes = [pane]
     const r = parseSnapshot(withFlag)

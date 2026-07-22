@@ -91,7 +91,9 @@ pub fn build_snapshot_observed(
                 // Zellij delivers title changes only on unrelated SessionUpdates (measured minutes
                 // late), while the viewport is re-read every tick, so content is the timely signal.
                 let is_claude = attentions::is_claude_pane(&pane.title, pane.command.as_deref())
-                    || scrollback.as_deref().is_some_and(attentions::is_claude_content);
+                    || scrollback
+                        .as_deref()
+                        .is_some_and(attentions::is_claude_content);
                 // Record EVERY pane's title + verdicts for the ADR-0049/0050 debug log (local-only),
                 // so an unrecognized claude pane's actual title is auditable in the field.
                 pane_obs.push(PaneObs {
@@ -571,7 +573,8 @@ mod tests {
         // THE 2026-07-22 INCIDENT (ADR-0054): Zellij delivers title changes minutes late, so the
         // pane title showed a stale idle "✳" (or even the shell's prompt) while the viewport showed
         // a RUNNING turn. Content must carry both identity and thinking, title be damned.
-        let ui = "· Bunning… (12s · ↓ 7.0k tokens)\n❯ \n  ⏵⏵ bypass permissions on · esc to interrupt";
+        let ui =
+            "· Bunning… (12s · ↓ 7.0k tokens)\n❯ \n  ⏵⏵ bypass permissions on · esc to interrupt";
         for stale_title in ["nordic@host:/repos/x", "✳ Start using Zustand everywhere"] {
             let mut host = thinking_host(stale_title);
             let mut act = crate::activity::PaneActivity::default();
@@ -580,11 +583,19 @@ mod tests {
             // Identity via content from the very first tick…
             assert!(b1.panes[0].is_claude, "title {stale_title:?}");
             // …thinking waits for freshness (first observation is never fresh, ADR-0034).
-            assert!(!b1.snap.attentions.iter().any(|a| a.kind == "claude.thinking"));
-            host.scrollback.insert(7, format!("{ui}\nstreaming more output"));
+            assert!(!b1
+                .snap
+                .attentions
+                .iter()
+                .any(|a| a.kind == "claude.thinking"));
+            host.scrollback
+                .insert(7, format!("{ui}\nstreaming more output"));
             let b2 = build_snapshot_observed(&host, &base_config(), "m-1", "salt", 2, 2, &mut act);
             assert!(
-                b2.snap.attentions.iter().any(|a| a.kind == "claude.thinking"),
+                b2.snap
+                    .attentions
+                    .iter()
+                    .any(|a| a.kind == "claude.thinking"),
                 "fresh + esc-to-interrupt must think despite stale title {stale_title:?}"
             );
             assert!(b2.snap.claude_active);
@@ -620,7 +631,11 @@ mod tests {
         let b2 = build_snapshot_observed(&host, &base_config(), "m-1", "salt", 2, 2, &mut act);
         assert!(b2.panes[0].fresh);
         assert!(b2.snap.claude_active);
-        assert!(b2.snap.attentions.iter().any(|a| a.kind == "claude.thinking"));
+        assert!(b2
+            .snap
+            .attentions
+            .iter()
+            .any(|a| a.kind == "claude.thinking"));
     }
 
     #[test]

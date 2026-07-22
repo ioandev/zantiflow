@@ -451,8 +451,12 @@ impl ZantiflowPlugin {
                 // followed by the per-pane title audit lines (ADR-0052) showing what the claude
                 // detector saw this tick.
                 if config.debug {
-                    self.host
-                        .log(&debuglog::ingest_line(self.tick, reason, &snap, req.body.len()));
+                    self.host.log(&debuglog::ingest_line(
+                        self.tick,
+                        reason,
+                        &snap,
+                        req.body.len(),
+                    ));
                     for line in debuglog::pane_title_lines(&built.panes) {
                         self.host.log(&line);
                     }

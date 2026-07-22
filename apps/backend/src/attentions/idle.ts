@@ -84,15 +84,13 @@ export const watchedPaneKeys = (sessions: StoredSession[], scope: PaneScope = DE
     const tabs = s.tabs ?? []
     // For 'claude-sessions', a session counts only if it holds at least one live claude pane.
     const sessionHasClaude =
-      scope !== 'claude-sessions' ||
-      tabs.some((t) => (t.panes ?? []).some((p) => !p.exited && isClaudeStoredPane(p)))
+      scope !== 'claude-sessions' || tabs.some((t) => (t.panes ?? []).some((p) => !p.exited && isClaudeStoredPane(p)))
     for (const t of tabs) {
       const tabId = t.tabId
       if (typeof tabId !== 'number') continue
       for (const p of t.panes ?? []) {
         if (typeof p.id !== 'number' || p.exited) continue
-        const include =
-          scope === 'all' ? true : scope === 'claude-sessions' ? sessionHasClaude : isClaudeStoredPane(p)
+        const include = scope === 'all' ? true : scope === 'claude-sessions' ? sessionHasClaude : isClaudeStoredPane(p)
         if (include) keys.push(paneKeyOf(sid, tabId, p.id))
       }
     }

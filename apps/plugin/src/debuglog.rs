@@ -317,18 +317,12 @@ mod tests {
     fn machine_edge_tracks_any_pane_across_sessions() {
         let mut d = DebugState::default();
         // Two sessions, one pane each; only one is producing output → ACTIVE 1/2.
-        let first = d.tick_lines(
-            &[],
-            &[pane("work", 0, 7, true), pane("side", 1, 9, false)],
-        );
+        let first = d.tick_lines(&[], &[pane("work", 0, 7, true), pane("side", 1, 9, false)]);
         assert!(first
             .iter()
             .any(|l| l == "debug: claude ACTIVE — 1/2 claude pane(s) producing output"));
         // The busy one settles → ALL sessions idle, exactly one machine-level line.
-        let idle = d.tick_lines(
-            &[],
-            &[pane("work", 0, 7, false), pane("side", 1, 9, false)],
-        );
+        let idle = d.tick_lines(&[], &[pane("work", 0, 7, false), pane("side", 1, 9, false)]);
         assert_eq!(
             idle.iter()
                 .filter(|l| l.contains("claude IDLE across all sessions"))
@@ -352,7 +346,9 @@ mod tests {
         );
         // A later pane starts a fresh machine-level picture (state was reset, so it logs again).
         let back = d.tick_lines(&[], &[pane("work", 0, 7, false)]);
-        assert!(back.iter().any(|l| l.contains("claude IDLE across all sessions")));
+        assert!(back
+            .iter()
+            .any(|l| l.contains("claude IDLE across all sessions")));
     }
 
     #[test]

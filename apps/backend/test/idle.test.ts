@@ -84,7 +84,10 @@ describe('watchedPaneKeys', () => {
 
   it('excludes exited panes', () => {
     const s = [
-      { sid: 's1', tabs: [{ tabId: 0, panes: [{ id: 1, name: '✳ done', command: null, exited: true, claude: true }] }] },
+      {
+        sid: 's1',
+        tabs: [{ tabId: 0, panes: [{ id: 1, name: '✳ done', command: null, exited: true, claude: true }] }],
+      },
     ]
     expect(watchedPaneKeys(s)).toEqual([])
   })
